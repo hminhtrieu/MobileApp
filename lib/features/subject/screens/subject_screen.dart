@@ -1,6 +1,6 @@
 import 'package:flashcard/features/documents/screens/document_list_screen.dart';
+import 'package:flashcard/features/subject/controllers/subject_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import '../models/subject_model.dart';
 
 class SubjectListScreen extends StatefulWidget {
@@ -11,10 +11,22 @@ class SubjectListScreen extends StatefulWidget {
 }
 
 class _SubjectListScreenState extends State<SubjectListScreen> {
-  // Lấy dữ liệu ảo đã tạo ở lớp Model để đưa vào danh sách hiển thị
-  List<SubjectModel> subjects = SubjectModel.getMockSubjects();
+  final SubjectController _subjectController = SubjectController();
+  late Future<List<SubjectModel>> _loadSubjectTask;
 
   int _currentBottomIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshSubject();
+  }
+
+  void _refreshSubject() {
+    setState(() {
+      _loadSubjectTask = _subjectController.fetchSubjectsList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,22 +35,54 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
 
       //top nav
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeroHeader(),
-            const SizedBox(height: 24),
+      body: FutureBuilder<List<SubjectModel>>(
+        future:
+            _loadSubjectTask, // Đón nhận luồng mảng thực thể từ SQLite nạp lên
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.black),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Lỗi hệ thống CSDL: ${snapshot.error}'));
+          }
 
-            _buildSubjectList(),
-            const SizedBox(height: 16),
-          ],
-        ),
+          final subjectList = snapshot.data ?? [];
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeroHeader(subjectList.length),
+                const SizedBox(height: 24),
+
+                if (subjectList.isEmpty)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text(
+                        'Chưa có môn học nào. Hãy bấm [+] để thêm mới!',
+                      ),
+                    ),
+                  )
+                else
+                  // 🛠️ FIX LOGIC ĐỔI TÊN BIẾN: Truyền nguyên mảng dữ liệu thật vào hàm
+                  _buildSubjectList(subjectList),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
       ),
 
       floatingActionButton: _buildFAB(context),
+
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -66,7 +110,8 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
     );
   }
 
-  Widget _buildHeroHeader() {
+  // 🛠️ FIX LOGIC THAM SỐ: Khai báo nhận giá trị đếm số lượng môn thật
+  Widget _buildHeroHeader(int totalSubjects) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -85,7 +130,8 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
             const Icon(Icons.school, color: Color(0xFF1C648E), size: 20),
             const SizedBox(width: 8),
             Text(
-              'Bạn đang có ${subjects.length} môn học',
+              // 🛠️ FIX LOGIC BIẾN: Sử dụng tham số totalSubjects thay cho biến ảo subjects cũ
+              'Bạn đang có $totalSubjects môn học',
               style: const TextStyle(color: Color(0xFF41484E), fontSize: 15),
             ),
           ],
@@ -94,54 +140,14 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
     );
   }
 
-  Widget _buildSingleStatItem(
-    String title,
-    String value,
-    IconData icon,
-    Color bgcolor,
-    Color textColor,
-  ) {
-    return Container(
-      width: 170,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgcolor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: textColor),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              color: textColor.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildSubjectList() {
+  Widget _buildSubjectList(List<SubjectModel> subjectList) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: subjects.length,
+      itemCount: subjectList.length,
       itemBuilder: (context, index) {
-        final item = subjects[index];
+        final item = subjectList[index];
         return _buildSubjectCard(item, context);
       },
     );
@@ -161,8 +167,10 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  DocumentListScreen(subjectName: subject.subjectName),
+              builder: (context) => DocumentListScreen(
+                subjectId: subject.subjectId!,
+                subjectName: subject.subjectName,
+              ),
             ),
           );
         },
@@ -175,10 +183,11 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Color(0xFFCAE6FF),
+                      backgroundColor: const Color(0xFFCAE6FF),
                       child: Icon(
+                        // Giả định hàm này nằm trong file Model của em để lấy icon ngẫu nhiên
                         subject.getRandomSubjectIcon(),
-                        color: Color(0xFF1C648E),
+                        color: const Color(0xFF1C648E),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -197,7 +206,8 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Ngày tạo: ${subject.createdAt}',
+                            // Format lại chuỗi hiển thị ngày tạo từ CSDL thật
+                            'Ngày tạo: ${subject.createdAt.length > 10 ? subject.createdAt.substring(0, 10) : subject.createdAt}',
                             style: const TextStyle(
                               color: Color(0xFF71787F),
                               fontSize: 12,
@@ -207,7 +217,6 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                       ),
                     ),
                   ],
-                  
                 ),
               ),
               const Icon(Icons.chevron_right, color: Color(0xFF1C648E)),
@@ -294,18 +303,15 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
               backgroundColor: const Color(0xFF1C648E),
               foregroundColor: Colors.white,
             ),
-            onPressed: () {
+            onPressed: () async {
               if (nameController.text.isNotEmpty) {
-                setState(() {
-                  subjects.add(
-                    SubjectModel(
-                      subjectId: subjects.length + 1,
-                      subjectName: nameController.text,
-                      createdAt: '2026-06-23',
-                    ),
-                  );
-                });
-                Navigator.pop(context);
+                // 🚀 FIX LUỒNG GHI DATA THẬT: Gọi hàm Model chèn trực tiếp xuống SQLite
+                await SubjectModel.dbInsertSubject(nameController.text);
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Đóng Dialog nhập liệu
+                  _refreshSubject(); // Tự động re-render và nạp mới danh sách thật từ SQLite
+                }
               }
             },
             child: const Text('Thêm ngay'),

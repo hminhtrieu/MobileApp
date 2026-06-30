@@ -1,46 +1,92 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show IconData, Icons;
+import 'package:sqflite/sqflite.dart';
+import 'package:flashcard/core/database/database_helper.dart';
 
 class DocumentModel {
-  final int documentId;
-  final String fileName;
+  final int? documentId;
   final String folderName;
+  final String fileName;
+  final String filePath;
   final String summaryContext;
   final String createdAt;
+  final int subjectId; 
 
   DocumentModel({
-    required this.documentId,
-    required this.fileName,
+    this.documentId,
     required this.folderName,
+    required this.fileName,
+    required this.filePath,
     required this.summaryContext,
     required this.createdAt,
+    required this.subjectId,
   });
 
-  static List<DocumentModel> getMockDocuments() {
-    return [
-      DocumentModel(
-        documentId: 1,
-        fileName: 'Tai_Lieu_On_Thi_Kỳ_1.pdf',
-        folderName: 'Chương 1: Khái niệm cơ bản',
-        summaryContext:
-            'Bài viết tóm tắt toàn bộ các định nghĩa nền tảng, hệ tư tưởng cốt lõi và các mốc sự kiện quan trọng cần ghi nhớ...',
-        createdAt: '24/06/2026',
-      ),
-    ];
+  
+  factory DocumentModel.fromMap(Map<String, dynamic> map) {
+    return DocumentModel(
+      documentId: map['document_id'] as int?,
+      folderName: map['folder_name'] as String,
+      fileName: map['file_name'] as String,
+      filePath: map['file_path'] as String,
+      summaryContext: map['summary_context'] as String,
+      createdAt: map['created_at'] as String,
+      subjectId: map['subject_id'] as int,
+    );
   }
 
+ 
+  Map<String, dynamic> toMap() {
+    return {
+      if (documentId != null) 'document_id': documentId,
+      'folder_name': folderName,
+      'file_name': fileName,
+      'file_path': filePath,
+      'summary_context': summaryContext,
+      'created_at': createdAt,
+      'subject_id': subjectId,
+    };
+  }
+
+  
+  static Future<List<DocumentModel>> dbGetDocumentsBySubject(int subId) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    
+    final List<Map<String, dynamic>> maps = await db.query(
+      'Document',
+      where: 'subject_id = ?',
+      whereArgs: [subId],
+      orderBy: 'document_id DESC',
+    );
+    
+    return maps.map((item) => DocumentModel.fromMap(item)).toList();
+  }
+
+  
+  static Future<int> dbInsertDocument(DocumentModel document) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.insert(
+      'Document',
+      document.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  
   IconData getRandomDocumentIcon() {
     final List<IconData> iconPool = [
-      Icons.auto_stories, // Quyển sách
-      Icons.wb_incandescent, // Bóng đèn
-      Icons.palette, // Bảng màu
-      Icons.rocket_launch, // Tên lửa
-      Icons.biotech, // Kính hiển vi
-      Icons.calculate, // Máy tính
-      Icons.extension, // Mảnh ghép
-      Icons.emoji_objects, // Ý tưởng
+      Icons.auto_stories,   
+      Icons.wb_incandescent, 
+      Icons.palette,         
+      Icons.rocket_launch,   
+      Icons.biotech,         
+      Icons.calculate,       
+      Icons.extension,     
+      Icons.emoji_objects,   
     ];
 
-    // Dùng toán tử chia lấy dư dựa trên documentId của tài liệu
-    return iconPool[documentId % iconPool.length];
+    if (documentId == null) return Icons.insert_drive_file;
+    
+    return iconPool[documentId! % iconPool.length];
   }
 }

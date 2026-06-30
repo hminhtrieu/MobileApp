@@ -12,7 +12,7 @@ class DocumentSummaryScreen extends StatefulWidget {
 }
 
 class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
-  int _selectedSectionIndex = 0;
+  final int _selectedSectionIndex = 0;
   String _selectedFileToView = '';
 
   final List<String> _sections = [
@@ -273,7 +273,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFDF96).withOpacity(0.5),
+              color: const Color(0xFFFFDF96).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
               border: const Border(
                 left: BorderSide(color: Color(0xFF765B06), width: 4),
@@ -316,7 +316,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           border: const Border(
             top: BorderSide(color: Color(0xFFE2E2E5), width: 1),
           ),
@@ -349,7 +349,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
                       color: Color(0xFFCAE6FF),
                       width: 1.5,
                     ),
-                    backgroundColor: const Color(0xFFCAE6FF).withOpacity(0.2),
+                    backgroundColor: const Color(0xFFCAE6FF).withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
