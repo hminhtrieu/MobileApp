@@ -1,4 +1,5 @@
 import 'package:flashcard/features/documents/model/document_model.dart';
+import 'package:flashcard/features/flashcard/screens/flashcard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -12,14 +13,7 @@ class DocumentSummaryScreen extends StatefulWidget {
 }
 
 class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
-  final int _selectedSectionIndex = 0;
   String _selectedFileToView = '';
-
-  final List<String> _sections = [
-    'Tổng quan',
-    'Kiến thức cốt lõi',
-    'Ghi chú & Mẹo',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -30,14 +24,15 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
         children: [
           Column(
             children: [
-              _buildSectionTabs(),
+              // 🌟 ĐÃ BỎ: _buildSectionTabs() (Thanh chọn 3 nút cũ đã được xóa bỏ hoàn toàn ở đây)
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.only(
                     left: 20.0,
                     right: 20.0,
-                    top: 12.0,
+                    top:
+                        16.0, // Tăng nhẹ khoảng cách top sau khi bỏ tab cho thoáng UI
                     bottom: 100.0,
                   ),
                   child: Column(
@@ -45,7 +40,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
                     children: [
                       _buildHeaderCard(),
                       const SizedBox(height: 20),
-                      _buildSummaryContent(),
+                      _buildSummaryContent(), // 🌟 Nội dung tóm tắt hiển thị trọn vẹn theo mạch văn bản
                     ],
                   ),
                 ),
@@ -69,7 +64,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'Tóm Tắt tài liệu AI',
+        'Tóm tắt tài liệu',
         style: GoogleFonts.quicksand(
           color: const Color(0xFF1C648E),
           fontWeight: FontWeight.bold,
@@ -79,59 +74,8 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
     );
   }
 
-  Widget _buildSectionTabs() {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _sections.length,
-        itemBuilder: (context, index) {
-          final isSelected = _selectedSectionIndex == index;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(_sections[index]),
-              labelStyle: GoogleFonts.quicksand(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : const Color(0xFF41484E),
-              ),
-              selected: isSelected,
-              color: WidgetStateProperty.resolveWith<Color?>((
-                Set<WidgetState> states,
-              ) {
-                if (states.contains(WidgetState.selected)) {
-                  return const Color(0xFF1C648E);
-                }
-                return Colors.white;
-              }),
-              elevation: isSelected ? 2 : 0,
-              pressElevation: 0,
-              side: BorderSide(
-                color: isSelected
-                    ? Colors.transparent
-                    : const Color(0xFFE2E2E5),
-                width: 1,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(99),
-              ),
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() => _selectedSectionIndex == index);
-                }
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildHeaderCard() {
+    // Nếu trong file document_model.dart của em trường tên file là khác, em nhớ sửa lại chữ .fileName tương ứng nhé!
     final List<String> textFiles = [
       widget.document.fileName,
       'Tom_tat_bai_giang_bo_sung.pdf',
@@ -146,7 +90,6 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
         color: const Color(0xFFCAE6FF),
         borderRadius: BorderRadius.circular(16),
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -169,7 +112,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  widget.document.folderName,
+                  widget.document.folderName, // Đổ tên chủ đề động
                   style: GoogleFonts.quicksand(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -180,10 +123,8 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
             ],
           ),
           const SizedBox(height: 12),
-
           const Divider(color: Colors.white54, thickness: 1),
           const SizedBox(height: 8),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
@@ -249,8 +190,9 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Tiêu đề cố định cho phân vùng nội dung chính
           Text(
-            _sections[_selectedSectionIndex],
+            'Nội dung tóm tắt',
             style: GoogleFonts.quicksand(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -260,8 +202,14 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
           const SizedBox(height: 14),
           const Divider(color: Color(0xFFF3F3F6), thickness: 1.5),
           const SizedBox(height: 14),
+
+          // 🌟 HIỂN THỊ CHUỖI VĂN BẢN ĐỘNG TUẦN TỰ:
+          // Toàn bộ text dài do n8n sinh ra sẽ được hiển thị đầy đủ tại đây.
+          // Triệu lưu ý: Nếu trong file 'document_model.dart' của em trường này không phải tên là '.summary'
+          // mà tên là '.content' thì em đổi chữ '.summary' dưới đây thành '.content' nhé!
           Text(
-            'Đây là nội dung tóm tắt cốt lõi được trích xuất bằng công nghệ AI thông minh. Hệ thống đã lược bỏ các phần rườm rà để giữ lại mạch kiến thức tinh túy nhất.',
+            widget.document.summaryContext ??
+                'Chưa có nội dung tóm tắt từ hệ thống.',
             style: GoogleFonts.quicksand(
               fontSize: 15,
               height: 1.6,
@@ -270,6 +218,8 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // Khối box mẹo nhỏ màu vàng giữ nguyên UI theo file gốc
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -323,13 +273,24 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
         ),
         child: Row(
           children: [
-            // Nút mở nhanh Flashcard ôn tập
             Expanded(
               child: SizedBox(
                 height: 48,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // TODO: Điều hướng sang trang Flashcard ôn tập
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FlashcardLearnScreen(
+                          // Đảm bảo truyền đúng trường khóa chính của DocumentModel
+                          // (Ví dụ: .documentId hoặc .id tùy theo model thật của em)
+                          documentId: widget.document.documentId ?? 0,
+                          folderName: widget
+                              .document
+                              .folderName, // Tên chủ đề để làm tiêu đề AppBar
+                        ),
+                      ),
+                    );
                   },
                   icon: const Icon(
                     Icons.style,
@@ -349,7 +310,9 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
                       color: Color(0xFFCAE6FF),
                       width: 1.5,
                     ),
-                    backgroundColor: const Color(0xFFCAE6FF).withValues(alpha: 0.2),
+                    backgroundColor: const Color(
+                      0xFFCAE6FF,
+                    ).withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -358,14 +321,12 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-
-            // Nút mở nhanh làm bài tập trắc nghiệm
             Expanded(
               child: SizedBox(
                 height: 48,
                 child: FilledButton.icon(
                   onPressed: () {
-                    // TODO: Điều hướng sang trang Quiz làm trắc nghiệm
+                    // Logic nhận diện điều hướng bài tập trắc nghiệm
                   },
                   icon: const Icon(Icons.quiz, size: 18, color: Colors.white),
                   label: Text(

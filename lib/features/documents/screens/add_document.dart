@@ -1,16 +1,10 @@
-import 'dart:convert';
-import 'package:flashcard/features/documents/model/document_model.dart';
+import 'package:flashcard/features/documents/controllers/add_document_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'package:dio/dio.dart';
-import 'package:file_selector/file_selector.dart'; // Thư viện chính chủ xử lý chọn file
-import 'package:flashcard/core/database/sync_controller.dart';
-// Đảm bảo import đúng model Document của em
 
 class AddThemeScreen extends StatefulWidget {
   final String subjectName;
-  final int subjectId; // Nhận ID môn học cha để liên kết Khóa ngoại khi lưu DB
+  final int subjectId;
 
   const AddThemeScreen({
     super.key,
@@ -23,137 +17,37 @@ class AddThemeScreen extends StatefulWidget {
 }
 
 class _AddThemeScreenState extends State<AddThemeScreen> {
-  final TextEditingController _themeNameController = TextEditingController();
-  final SyncController _syncController = SyncController();
+  late final AddDocumentController _controller;
 
-  // 🌟 Biến lưu trữ thông tin File thật được chọn từ thiết bị (Chuẩn XFile)
-  XFile? _pickedFile;
-  int _fileLengthInBytes =
-      0; // 🚀 BIẾN CỤC BỘ: Lưu trữ dung lượng file thật sau khi đọc bất đồng bộ
-  bool _isLoading = false;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AddDocumentController();
+    _controller.addListener(_onControllerUpdate);
+  }
 
   @override
   void dispose() {
-    _themeNameController.dispose();
+    _controller.removeListener(_onControllerUpdate);
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _pickRealFile() async {
-    try {
-      final XTypeGroup typeGroup = XTypeGroup(
-        label: 'documents',
-        extensions: <String>['pdf', 'doc', 'docx', 'txt'],
-      );
-
-      // Gọi trình mở file hệ thống của Flutter Team
-      final XFile? file = await openFile(
-        acceptedTypeGroups: <XTypeGroup>[typeGroup],
-      );
-
-      if (file != null) {
-        // 🚀 TỐI ƯU LOGIC: Đọc dung lượng file thật bất đồng bộ để tránh nghẽn luồng UI
-        final int length = await file.length();
-        setState(() {
-          _pickedFile = file;
-          _fileLengthInBytes = length; // Cập nhật dung lượng thực tế
-        });
-      }
-    } catch (e) {
-      _showErrorSnackBar('Không thể mở trình chọn file của thiết bị: $e');
+  void _onControllerUpdate() {
+    if (_controller.errorMessage != null) {
+      _showErrorSnackBar(_controller.errorMessage!);
+      _controller.clearError();
     }
   }
 
-  // 🚀 PIPELINE THẬT: Bắn File vật lý lên n8n -> Hứng JSON -> Ghi SQLite
-  Future<void> _uploadAndProcessDocument() async {
-    if (_pickedFile == null || _pickedFile!.path.isEmpty) {
-      _showErrorSnackBar('Vui lòng chọn một tệp tài liệu học tập thật!');
-      return;
-    }
-
-    final String themeName = _themeNameController.text.trim();
-
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _handleUpload() async {
     _showLoadingDialog();
-
-    try {
-      // 1. TỐI ƯU HẠ TẦNG: Tạo bản ghi vật lý đại diện xuống DB trước để lấy rowId tự tăng chuẩn xác từ SQLite
-      final newDoc = DocumentModel(
-        folderName: themeName,
-        fileName: _pickedFile!.name,
-        filePath: _pickedFile!.path,
-        summaryContext: 'Đang chờ n8n AI phân tích...',
-        createdAt: DateTime.now().toIso8601String(),
-        subjectId: widget.subjectId,
-      );
-
-      // Chèn ngầm và thu về ID chính xác của SQLite
-      int targetDocId = await DocumentModel.dbInsertDocument(newDoc);
-
-      // 2. THIẾT LẬP MULTIPART REQUEST ĐỂ GỬI FILE VẬT LÝ (SỬ DỤNG DIO ĐỂ TRÁNH LỖI SOCKET/TIMEOUT)
-      final url = 'http://192.168.1.2:5678/webhook-test/upload-document';
-
-      final dio = Dio();
-      dio.options.connectTimeout = const Duration(seconds: 90);
-      dio.options.receiveTimeout = const Duration(seconds: 90);
-
-      FormData formData = FormData.fromMap({
-        'document_id': targetDocId.toString(),
-        'subject_id': widget.subjectId.toString(),
-        'folder_name': themeName,
-        'file': await MultipartFile.fromFile(
-          _pickedFile!.path,
-          filename: _pickedFile!.name,
-        ),
-      });
-
-      // Gửi request lên n8n backend và đợi phản hồi
-      var response = await dio.post(url, data: formData);
-
-      if (response.statusCode == 200) {
-        // Giải mã gói tin thô nhận từ n8n (Dio tự động parse Map nếu là JSON)
-        final Map<String, dynamic> n8nRawResponse = response.data is String
-            ? jsonDecode(response.data)
-            : response.data;
-
-        // 3. GỌI SYNC CONTROLLER: Giải mã double-decode và phân rã học liệu xuống 3 bảng SQLite
-        bool isSyncSuccess = await _syncController.importN8nDataToDatabase(
-          targetDocId,
-          n8nRawResponse,
-        );
-
-        if (mounted) {
-          Navigator.pop(context); // Đóng Loading Dialog
-
-          if (isSyncSuccess) {
-            // 4. TRẢ KẾT QUẢ THÀNH CÔNG VỀ TRANG CHA ĐỂ MỞ KHÓA 3 CHỨC NĂNG VỚI DATA THẬT
-            Navigator.pop(context, true);
-          } else {
-            _showErrorSnackBar(
-              'Lỗi phân rã cấu trúc JSON khi rải dữ liệu xuống CSDL cục bộ!',
-            );
-          }
-        }
-      } else {
-        if (mounted) {
-          Navigator.pop(context);
-          _showErrorSnackBar(
-            'Cổng n8n báo lỗi hệ thống: ${response.statusCode}',
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        _showErrorSnackBar('Lỗi nghẽn mạch kết nối hoặc timeout luồng AI: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+    bool isSuccess = await _controller.uploadAndProcessDocument(widget.subjectId);
+    
+    if (mounted) {
+      Navigator.pop(context); // Đóng Loading Dialog
+      if (isSuccess) {
+        Navigator.pop(context, true); // Trả kết quả thành công về trang cha
       }
     }
   }
@@ -222,7 +116,7 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
                 const SizedBox(height: 24),
                 _buildThemeNameInput(),
                 const SizedBox(height: 24),
-                _buildFileUploadArea(), // Khu vực tải file thật
+                _buildFileUploadArea(),
                 const SizedBox(height: 24),
                 _buildAiAutomationSection(),
               ],
@@ -299,42 +193,47 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
             ),
           ),
         ),
-        TextField(
-          controller: _themeNameController,
-          enabled: !_isLoading,
-          style: GoogleFonts.quicksand(
-            fontSize: 15,
-            color: const Color(0xFF1A1C1E),
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Ví dụ: Lịch sử Việt Nam thế kỷ XX',
-            hintStyle: GoogleFonts.quicksand(color: const Color(0xFF71787F)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 16,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(99),
-              borderSide: const BorderSide(
-                color: Color(0xFFC0C7CF),
-                width: 1.5,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            return TextField(
+              controller: _controller.themeNameController,
+              enabled: !_controller.isLoading,
+              style: GoogleFonts.quicksand(
+                fontSize: 15,
+                color: const Color(0xFF1A1C1E),
+                fontWeight: FontWeight.w500,
               ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(99),
-              borderSide: const BorderSide(
-                color: Color(0xFFC0C7CF),
-                width: 1.5,
+              decoration: InputDecoration(
+                hintText: 'Ví dụ: Lịch sử Việt Nam thế kỷ XX',
+                hintStyle: GoogleFonts.quicksand(color: const Color(0xFF71787F)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(99),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFC0C7CF),
+                    width: 1.5,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(99),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFC0C7CF),
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(99),
+                  borderSide: const BorderSide(color: Color(0xFF1C648E), width: 2),
+                ),
               ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(99),
-              borderSide: const BorderSide(color: Color(0xFF1C648E), width: 2),
-            ),
-          ),
+            );
+          }
         ),
       ],
     );
@@ -355,62 +254,67 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
             ),
           ),
         ),
-        InkWell(
-          onTap: _isLoading ? null : _pickRealFile,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F6),
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            return InkWell(
+              onTap: _controller.isLoading ? null : () => _controller.pickRealFile(),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFC0C7CF), width: 1.5),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFCAE6FF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.cloud_upload,
-                    color: Color(0xFF004B70),
-                    size: 24,
-                  ),
+              child: Container(
+                width: double.infinity,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F3F6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFC0C7CF), width: 1.5),
                 ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    _pickedFile != null ? _pickedFile!.name : 'Chọn tài liệu',
-                    style: GoogleFonts.quicksand(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1A1C1E),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFCAE6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.cloud_upload,
+                        color: Color(0xFF004B70),
+                        size: 24,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        _controller.pickedFile != null ? _controller.pickedFile!.name : 'Chọn tài liệu',
+                        style: GoogleFonts.quicksand(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1A1C1E),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _controller.pickedFile != null
+                          ? 'Dung lượng: ${(_controller.fileLengthInBytes / 1024).toStringAsFixed(1)} KB - Nhấn để đổi'
+                          : 'Kéo thả hoặc nhấn để tải lên',
+                      style: GoogleFonts.quicksand(
+                        fontSize: 12,
+                        color: const Color(0xFF71787F),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _pickedFile != null
-                      ? 'Dung lượng: ${(_fileLengthInBytes / 1024).toStringAsFixed(1)} KB - Nhấn để đổi'
-                      : 'Kéo thả hoặc nhấn để tải lên',
-                  style: GoogleFonts.quicksand(
-                    fontSize: 12,
-                    color: const Color(0xFF71787F),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          }
         ),
       ],
     );
@@ -510,24 +414,29 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
         child: SizedBox(
           width: double.infinity,
           height: 54,
-          child: FilledButton.icon(
-            onPressed: _isLoading ? null : _uploadAndProcessDocument,
-            icon: const Icon(Icons.play_arrow, size: 20),
-            label: Text(
-              'Bắt đầu xử lý & Tạo chủ đề',
-              style: GoogleFonts.quicksand(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1C648E),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
+          child: ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) {
+              return FilledButton.icon(
+                onPressed: _controller.isLoading ? null : _handleUpload,
+                icon: const Icon(Icons.play_arrow, size: 20),
+                label: Text(
+                  'Bắt đầu xử lý & Tạo chủ đề',
+                  style: GoogleFonts.quicksand(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1C648E),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              );
+            }
           ),
         ),
       ),
