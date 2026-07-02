@@ -2,6 +2,8 @@ import 'package:flashcard/features/documents/controllers/document_list_controlle
 import 'package:flashcard/features/documents/model/document_model.dart';
 import 'package:flashcard/features/documents/screens/document_summary_screen.dart';
 import 'package:flashcard/features/documents/screens/add_document.dart';
+import 'package:flashcard/features/flashcard/screens/flashcard_screen.dart';
+import 'package:flashcard/features/quiz/screens/quiz_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -48,8 +50,22 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                 listenable: _controller,
                 builder: (context, _) {
                   if (_controller.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.black),
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(color: Color(0xFF1C648E)),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Đang nạp danh sách chủ đề...',
+                            style: GoogleFonts.quicksand(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF41484E),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
@@ -170,6 +186,38 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   ),
                 ),
               ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Color(0xFF71787f)),
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    _showEditDialog(doc);
+                  } else if (value == 'delete') {
+                    _showDeleteConfirmDialog(doc);
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 20, color: Color(0xFF1C648E)),
+                        SizedBox(width: 8),
+                        Text('Đổi tên chủ đề'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 20, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Xóa chủ đề', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -193,16 +241,28 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             children: [
               Expanded(
                 child: _buildChunkyButton('HỌC TẬP GHI NHỚ', Icons.style, () {
-                  print(
-                    "Kích hoạt chuyển mạch học Flashcard của Doc ID: ${doc.documentId}",
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FlashcardLearnScreen(
+                        documentId: doc.documentId!,
+                        folderName: doc.folderName,
+                      ),
+                    ),
                   );
                 }),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildChunkyButton('BÀI TẬP TRẮC NGHIỆM', Icons.quiz, () {
-                  print(
-                    "Kích hoạt chuyển mạch làm Quiz của Doc ID: ${doc.documentId}",
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => QuizScreen(
+                        documentId: doc.documentId!,
+                        folderName: doc.folderName,
+                      ),
+                    ),
                   );
                 }),
               ),
@@ -212,8 +272,40 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
 
           SizedBox(
             width: double.infinity,
-            child: _buildChunkyButton('TẢI TÀI LIỆU', Icons.upload_file, () {
-              print("Đường dẫn tệp cục bộ: ${doc.filePath}");
+            child: _buildChunkyButton('TẢI THÊM TÀI LIỆU', Icons.upload_file, () async {
+              try {
+                await _controller.uploadAdditionalDocument(doc);
+              } catch (e) {
+                String error = e.toString();
+                if (error.startsWith('START_UPLOAD:')) {
+                  final parts = error.replaceAll('START_UPLOAD:', '').split('|');
+                  if (parts.length == 2) {
+                    final filePath = parts[0];
+                    final fileName = parts[1];
+
+                    _showLoadingDialog();
+                    try {
+                      await _controller.processAdditionalUpload(doc, filePath, fileName);
+                      if (mounted) {
+                        Navigator.pop(context); // Đóng Loading Dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Tải thêm tài liệu thành công!', style: GoogleFonts.quicksand(fontWeight: FontWeight.bold)),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (uploadError) {
+                      if (mounted) {
+                        Navigator.pop(context); // Đóng Loading Dialog
+                        _showErrorSnackBar(uploadError.toString());
+                      }
+                    }
+                  }
+                } else {
+                  _showErrorSnackBar(error);
+                }
+              }
             }),
           ),
           const SizedBox(height: 12),
@@ -314,6 +406,131 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           side: const BorderSide(color: Colors.white),
         ),
       ),
+    );
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _buildLoadingWidget(),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(color: Color(0xFF1C648E)),
+          const SizedBox(height: 16),
+          Text(
+            'Đang tải lên và xử lý dữ liệu với AI...\nQuá trình này có thể mất vài phút.',
+            style: GoogleFonts.quicksand(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFFBA1A1A),
+      ),
+    );
+  }
+
+  void _showEditDialog(DocumentModel doc) {
+    final TextEditingController textController = TextEditingController(
+      text: doc.folderName.replaceAll(RegExp(r'Chủ đề \d+: '), ''),
+    );
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(
+            'Đổi tên chủ đề',
+            style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
+          ),
+          content: TextField(
+            controller: textController,
+            decoration: const InputDecoration(
+              hintText: 'Nhập tên mới',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await _controller.renameDocument(doc.documentId!, textController.text);
+                  if (context.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    _showErrorSnackBar(e.toString());
+                  }
+                }
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmDialog(DocumentModel doc) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(
+            'Xóa chủ đề',
+            style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Bạn có chắc chắn muốn xóa "${doc.folderName.replaceAll(RegExp(r'Chủ đề \d+: '), '')}"? Hành động này sẽ xóa vĩnh viễn toàn bộ Flashcard và Quiz bên trong!',
+            style: GoogleFonts.quicksand(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () async {
+                try {
+                  await _controller.deleteDocument(doc.documentId!);
+                  if (context.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    _showErrorSnackBar(e.toString());
+                  }
+                }
+              },
+              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 

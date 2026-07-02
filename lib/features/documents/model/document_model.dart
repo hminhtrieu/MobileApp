@@ -62,7 +62,6 @@ class DocumentModel {
     return maps.map((item) => DocumentModel.fromMap(item)).toList();
   }
 
-  
   static Future<int> dbInsertDocument(DocumentModel document) async {
     final db = await DatabaseHelper.instance.database;
     return await db.insert(
@@ -72,6 +71,30 @@ class DocumentModel {
     );
   }
 
+  static Future<void> dbDeleteDocument(int docId) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.delete('Document', where: 'document_id = ?', whereArgs: [docId]);
+  }
+
+  static Future<void> dbUpdateDocumentName(int docId, String newName) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'Document',
+      {'folder_name': newName},
+      where: 'document_id = ?',
+      whereArgs: [docId],
+    );
+  }
+
+  static Future<void> dbUpdateDocumentFile(int docId, String fileName, String filePath) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'Document',
+      {'file_name': fileName, 'file_path': filePath},
+      where: 'document_id = ?',
+      whereArgs: [docId],
+    );
+  }
   
   IconData getRandomDocumentIcon() {
     final List<IconData> iconPool = [

@@ -538,49 +538,42 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     required int level,
     required int cardId,
   }) {
-    bool isPressed = false;
-    return StatefulBuilder(
-      builder: (context, setBtnState) {
-        return GestureDetector(
-          child: ElevatedButton(
-            onPressed: () {
-              if (level == 0) {
-                _controller.nextCard(_refreshUIOnStateChange);
-              } else {
-                _controller.updateMemoryLevel(
-                  cardId,
-                  level,
-                  _refreshUIOnStateChange,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: bg,
-              foregroundColor: textCol,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: borderCol, width: 2),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: textCol, size: 24),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: textCol,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+    return ElevatedButton(
+      onPressed: () {
+        if (level == 0) {
+          _controller.nextCard(_refreshUIOnStateChange);
+        } else {
+          _controller.updateMemoryLevel(
+            cardId,
+            level,
+            _refreshUIOnStateChange,
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: bg,
+        foregroundColor: textCol,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: borderCol, width: 2),
+        ),
+        padding: EdgeInsets.zero,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: textCol, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: textCol,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

@@ -56,6 +56,14 @@ class AddDocumentController extends ChangeNotifier {
 
       if (file != null) {
         final int length = await file.length();
+        if (length > 3 * 1024 * 1024) {
+          _setError('Kích thước tệp vượt quá 3MB. Vui lòng chọn tệp nhỏ hơn để hệ thống AI xử lý.');
+          _pickedFile = null;
+          _fileLengthInBytes = 0;
+          notifyListeners();
+          return;
+        }
+        
         _pickedFile = file;
         _fileLengthInBytes = length;
         notifyListeners();
@@ -108,48 +116,76 @@ class AddDocumentController extends ChangeNotifier {
 
       int targetDocId = await DocumentModel.dbInsertDocument(newDoc);
 
-      final url = 'http://192.168.1.2:5678/webhook-test/upload-document';
+      try {
+        final url = 'http://192.168.1.2:5678/webhook-test/upload-document';
 
-      final dio = Dio();
-      dio.options.connectTimeout = const Duration(seconds: 90);
-      dio.options.receiveTimeout = const Duration(seconds: 90);
+        final dio = Dio();
+        dio.options.connectTimeout = const Duration(seconds: 90);
+        dio.options.receiveTimeout = const Duration(seconds: 90);
 
-      FormData formData = FormData.fromMap({
-        'document_id': targetDocId.toString(),
-        'subject_id': subjectId.toString(),
-        'folder_name': themeName,
-        'file': await MultipartFile.fromFile(
-          _pickedFile!.path,
-          filename: _pickedFile!.name,
-        ),
-      });
+        FormData formData = FormData.fromMap({
+          'document_id': targetDocId.toString(),
+          'subject_id': subjectId.toString(),
+          'folder_name': themeName,
+          'file': await MultipartFile.fromFile(
+            _pickedFile!.path,
+            filename: _pickedFile!.name,
+          ),
+        });
 
-      var response = await dio.post(url, data: formData);
+        var response = await dio.post(url, data: formData);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> n8nRawResponse = response.data is String
-            ? jsonDecode(response.data)
-            : response.data;
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> n8nRawResponse = response.data is String
+              ? jsonDecode(response.data)
+              : response.data;
 
-        bool isSyncSuccess = await _syncController.importN8nDataToDatabase(
-          targetDocId,
-          n8nRawResponse,
-        );
+          bool isSyncSuccess = await _syncController.importN8nDataToDatabase(
+            targetDocId,
+            n8nRawResponse,
+          );
 
-        if (isSyncSuccess) {
-          print('💾 SQLite đã ghi dữ liệu xong. Kích hoạt lệnh copy file...');
-          await _cuopFileDatabase();
-          _isLoading = false;
-          notifyListeners();
-          return true;
+          if (isSyncSuccess) {
+            print('💾 SQLite đã ghi dữ liệu xong. Kích hoạt lệnh copy file...');
+            await _cuopFileDatabase();
+            _isLoading = false;
+            notifyListeners();
+            return true;
+          } else {
+            await DocumentModel.dbDeleteDocument(targetDocId);
+            _setError('Lỗi phân rã cấu trúc JSON khi rải dữ liệu xuống CSDL cục bộ!');
+          }
         } else {
-          _setError('Lỗi phân rã cấu trúc JSON khi rải dữ liệu xuống CSDL cục bộ!');
+          await DocumentModel.dbDeleteDocument(targetDocId);
+          _setError('Cổng n8n báo lỗi hệ thống: ${response.statusCode}');
         }
-      } else {
-        _setError('Cổng n8n báo lỗi hệ thống: ${response.statusCode}');
+      } catch (e) {
+        await DocumentModel.dbDeleteDocument(targetDocId);
+        if (e is DioException) {
+          if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+            _setError('Máy chủ AI đang xử lý quá lâu hoặc quá tải (Timeout). Vui lòng thử lại.');
+          } else if (e.type == DioExceptionType.connectionError) {
+            _setError('Không thể kết nối đến máy chủ n8n. Vui lòng kiểm tra lại server hoặc mạng internet.');
+          } else if (e.response != null) {
+            final statusCode = e.response!.statusCode;
+            if (statusCode == 429) {
+              _setError('Bạn đã gửi quá nhiều yêu cầu. Hệ thống AI đang bị giới hạn, vui lòng chờ một lát.');
+            } else if (statusCode == 401 || statusCode == 403) {
+              _setError('Hệ thống n8n báo lỗi xác thực hoặc đã hết Token API của mô hình AI.');
+            } else if (statusCode != null && statusCode >= 500) {
+              _setError('Máy chủ n8n đang gặp lỗi nội bộ không thể xử lý ($statusCode).');
+            } else {
+              _setError('Máy chủ AI trả về lỗi không xác định ($statusCode).');
+            }
+          } else {
+            _setError('Mất kết nối mạng khi đang xử lý hoặc server n8n chưa hoạt động.');
+          }
+        } else {
+          _setError('Đã có lỗi hệ thống xảy ra trong quá trình xử lý luồng AI.');
+        }
       }
     } catch (e) {
-      _setError('Lỗi nghẽn mạch kết nối hoặc timeout luồng AI: $e');
+      _setError('Hệ thống gặp sự cố khi khởi tạo chủ đề mới.');
     }
 
     _isLoading = false;
