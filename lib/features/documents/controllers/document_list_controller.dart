@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 class DocumentListController extends ChangeNotifier {
   final int subjectId;
   final SyncController _syncController = SyncController();
-  
+
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
@@ -82,12 +82,16 @@ class DocumentListController extends ChangeNotifier {
     }
   }
 
-  Future<void> processAdditionalUpload(DocumentModel doc, String filePath, String fileName) async {
+  Future<void> processAdditionalUpload(
+    DocumentModel doc,
+    String filePath,
+    String fileName,
+  ) async {
     try {
       final url = 'http://192.168.1.2:5678/webhook-test/upload-document';
       final dio = Dio();
-      dio.options.connectTimeout = const Duration(seconds: 90);
-      dio.options.receiveTimeout = const Duration(seconds: 90);
+      dio.options.connectTimeout = const Duration(seconds: 300);
+      dio.options.receiveTimeout = const Duration(seconds: 300);
 
       FormData formData = FormData.fromMap({
         'document_id': doc.documentId.toString(),
@@ -109,7 +113,11 @@ class DocumentListController extends ChangeNotifier {
         );
 
         if (isSyncSuccess) {
-          await DocumentModel.dbUpdateDocumentFile(doc.documentId!, fileName, filePath);
+          await DocumentModel.dbUpdateDocumentFile(
+            doc.documentId!,
+            fileName,
+            filePath,
+          );
           await refreshDocuments();
         } else {
           throw 'Hệ thống không thể xử lý dữ liệu trả về từ AI. Vui lòng thử lại sau.';
@@ -119,7 +127,8 @@ class DocumentListController extends ChangeNotifier {
       }
     } catch (e) {
       if (e is DioException) {
-        if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
           throw 'Máy chủ AI đang xử lý quá lâu hoặc quá tải (Timeout). Vui lòng thử lại.';
         } else if (e.type == DioExceptionType.connectionError) {
           throw 'Không thể kết nối đến máy chủ n8n. Vui lòng kiểm tra lại server hoặc mạng internet.';

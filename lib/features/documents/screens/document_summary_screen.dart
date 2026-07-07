@@ -1,5 +1,6 @@
 import 'package:flashcard/features/documents/model/document_model.dart';
 import 'package:flashcard/features/flashcard/screens/flashcard_screen.dart';
+import 'package:flashcard/features/quiz/screens/quiz_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -208,8 +209,7 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
           // Triệu lưu ý: Nếu trong file 'document_model.dart' của em trường này không phải tên là '.summary'
           // mà tên là '.content' thì em đổi chữ '.summary' dưới đây thành '.content' nhé!
           Text(
-            widget.document.summaryContext ??
-                'Chưa có nội dung tóm tắt từ hệ thống.',
+            widget.document.summaryContext,
             style: GoogleFonts.quicksand(
               fontSize: 15,
               height: 1.6,
@@ -326,7 +326,19 @@ class _DocumentSummaryScreenState extends State<DocumentSummaryScreen> {
                 height: 48,
                 child: FilledButton.icon(
                   onPressed: () {
-                    // Logic nhận diện điều hướng bài tập trắc nghiệm
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizScreen(
+                          documentId:
+                              widget.document.documentId ??
+                              0, // Truyền ID để bốc đúng ngân hàng Quiz
+                          folderName: widget
+                              .document
+                              .folderName, // Truyền tên chủ đề hiển thị tag
+                        ),
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.quiz, size: 18, color: Colors.white),
                   label: Text(

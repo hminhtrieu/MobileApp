@@ -73,6 +73,9 @@ class DocumentModel {
 
   static Future<void> dbDeleteDocument(int docId) async {
     final db = await DatabaseHelper.instance.database;
+    await db.delete('Flashcard', where: 'document_id = ?', whereArgs: [docId]);
+    await db.delete('Quiz', where: 'document_id = ?', whereArgs: [docId]);
+    await db.delete('Quiz_Result', where: 'document_id = ?', whereArgs: [docId]);
     await db.delete('Document', where: 'document_id = ?', whereArgs: [docId]);
   }
 

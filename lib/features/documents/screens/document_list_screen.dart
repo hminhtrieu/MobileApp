@@ -4,6 +4,7 @@ import 'package:flashcard/features/documents/screens/document_summary_screen.dar
 import 'package:flashcard/features/documents/screens/add_document.dart';
 import 'package:flashcard/features/flashcard/screens/flashcard_screen.dart';
 import 'package:flashcard/features/quiz/screens/quiz_screen.dart';
+import 'package:flashcard/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,7 +24,6 @@ class DocumentListScreen extends StatefulWidget {
 
 class _DocumentListScreenState extends State<DocumentListScreen> {
   late final DocumentListController _controller;
-  int _currentBottomIndex = 0;
 
   @override
   void initState() {
@@ -54,7 +54,9 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const CircularProgressIndicator(color: Color(0xFF1C648E)),
+                          const CircularProgressIndicator(
+                            color: Color(0xFF1C648E),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Đang nạp danh sách chủ đề...',
@@ -84,11 +86,27 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     child: Column(
                       children: [
                         if (documentList.isEmpty)
-                          const Center(
+                          Center(
                             child: Padding(
-                              padding: EdgeInsets.all(40.0),
-                              child: Text(
-                                'Chưa có chủ đề nào trong môn học này. Hãy thêm mới!',
+                              padding: const EdgeInsets.all(40.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.folder_open,
+                                    size: 80,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Chưa có chủ đề nào trong môn học này. Hãy thêm mới!',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.quicksand(
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           )
@@ -102,7 +120,6 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                 },
               ),
             ),
-            _buildBottomNavigationBar(),
           ],
         ),
       ),
@@ -254,17 +271,21 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildChunkyButton('BÀI TẬP TRẮC NGHIỆM', Icons.quiz, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizScreen(
-                        documentId: doc.documentId!,
-                        folderName: doc.folderName,
+                child: _buildChunkyButton(
+                  'BÀI TẬP TRẮC NGHIỆM',
+                  Icons.quiz,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizScreen(
+                          documentId: doc.documentId!,
+                          folderName: doc.folderName,
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -272,41 +293,56 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
 
           SizedBox(
             width: double.infinity,
-            child: _buildChunkyButton('TẢI THÊM TÀI LIỆU', Icons.upload_file, () async {
-              try {
-                await _controller.uploadAdditionalDocument(doc);
-              } catch (e) {
-                String error = e.toString();
-                if (error.startsWith('START_UPLOAD:')) {
-                  final parts = error.replaceAll('START_UPLOAD:', '').split('|');
-                  if (parts.length == 2) {
-                    final filePath = parts[0];
-                    final fileName = parts[1];
+            child: _buildChunkyButton(
+              'TẢI THÊM TÀI LIỆU',
+              Icons.upload_file,
+              () async {
+                try {
+                  await _controller.uploadAdditionalDocument(doc);
+                } catch (e) {
+                  String error = e.toString();
+                  if (error.startsWith('START_UPLOAD:')) {
+                    final parts = error
+                        .replaceAll('START_UPLOAD:', '')
+                        .split('|');
+                    if (parts.length == 2) {
+                      final filePath = parts[0];
+                      final fileName = parts[1];
 
-                    _showLoadingDialog();
-                    try {
-                      await _controller.processAdditionalUpload(doc, filePath, fileName);
-                      if (mounted) {
-                        Navigator.pop(context); // Đóng Loading Dialog
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Tải thêm tài liệu thành công!', style: GoogleFonts.quicksand(fontWeight: FontWeight.bold)),
-                            backgroundColor: Colors.green,
-                          ),
+                      _showLoadingDialog();
+                      try {
+                        await _controller.processAdditionalUpload(
+                          doc,
+                          filePath,
+                          fileName,
                         );
-                      }
-                    } catch (uploadError) {
-                      if (mounted) {
-                        Navigator.pop(context); // Đóng Loading Dialog
-                        _showErrorSnackBar(uploadError.toString());
+                        if (mounted) {
+                          Navigator.pop(context); // Đóng Loading Dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Tải thêm tài liệu thành công!',
+                                style: GoogleFonts.quicksand(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (uploadError) {
+                        if (mounted) {
+                          Navigator.pop(context); // Đóng Loading Dialog
+                          _showErrorSnackBar(uploadError.toString());
+                        }
                       }
                     }
+                  } else {
+                    _showErrorSnackBar(error);
                   }
-                } else {
-                  _showErrorSnackBar(error);
                 }
-              }
-            }),
+              },
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -465,9 +501,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           ),
           content: TextField(
             controller: textController,
-            decoration: const InputDecoration(
-              hintText: 'Nhập tên mới',
-            ),
+            decoration: const InputDecoration(hintText: 'Nhập tên mới'),
             autofocus: true,
           ),
           actions: [
@@ -478,7 +512,10 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await _controller.renameDocument(doc.documentId!, textController.text);
+                  await _controller.renameDocument(
+                    doc.documentId!,
+                    textController.text,
+                  );
                   if (context.mounted) Navigator.pop(ctx);
                 } catch (e) {
                   if (context.mounted) {
@@ -534,30 +571,5 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentBottomIndex,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF1C648E),
-      unselectedItemColor: const Color(0xFF41484E),
-      onTap: (index) {
-        setState(() {
-          _currentBottomIndex = index;
-        });
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.library_books),
-          label: 'Thư viện',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.leaderboard),
-          label: 'Thống kê',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-      ],
-    );
-  }
+  // Removed _buildBottomNavigationBar
 }

@@ -95,8 +95,37 @@ class QuizController {
     } else {
       _timer?.cancel();
       isQuizFinished = true; // Hoàn thành câu cuối cùng, bật Overlay kết quả
+      _saveQuizResult();
     }
     onUpdate();
+  }
+
+  // 6. Lưu kết quả vào CSDL
+  Future<void> _saveQuizResult() async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = p.join(dbPath, 'learning.db');
+      final Database db = await openDatabase(path);
+
+      // Lấy attempt_number hiện tại (số lần làm bài trước đó + 1)
+      final attemptQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Quiz_Result WHERE document_id = ?', [documentId]);
+      int attemptNumber = (Sqflite.firstIntValue(attemptQuery) ?? 0) + 1;
+
+      // Tính điểm hệ 10
+      double score = (correctCount / quizQuestions.length) * 10;
+
+      await db.insert('Quiz_Result', {
+        'correct_answers': correctCount,
+        'total_questions': quizQuestions.length,
+        'score': score,
+        'attempt_number': attemptNumber,
+        'created_at': DateTime.now().toIso8601String(),
+        'document_id': documentId,
+      });
+      print('✅ Đã lưu kết quả bài Quiz: Điểm $score, Lần làm $attemptNumber');
+    } catch (e) {
+      print('❌ Lỗi khi lưu kết quả bài Quiz: $e');
+    }
   }
 
   // 5. Tính toán các chỉ số đầu ra

@@ -49,6 +49,27 @@ class SubjectModel {
     return maps.map((item) => SubjectModel.fromMap(item)).toList();
   }
 
+  static Future<void> dbDeleteSubject(int subjectId) async {
+    final db = await DatabaseHelper.instance.database;
+
+    // Get all documents for this subject
+    final documents = await db.query('Document', where: 'subject_id = ?', whereArgs: [subjectId]);
+
+    for (var doc in documents) {
+      final docId = doc['document_id'];
+      // Delete flashcards, quizzes, and quiz results for each document
+      await db.delete('Flashcard', where: 'document_id = ?', whereArgs: [docId]);
+      await db.delete('Quiz', where: 'document_id = ?', whereArgs: [docId]);
+      await db.delete('Quiz_Result', where: 'document_id = ?', whereArgs: [docId]);
+    }
+
+    // Delete all documents for this subject
+    await db.delete('Document', where: 'subject_id = ?', whereArgs: [subjectId]);
+
+    // Finally delete the subject
+    await db.delete('Subject', where: 'subject_id = ?', whereArgs: [subjectId]);
+  }
+
   IconData getRandomSubjectIcon() {
     final List<IconData> iconPool = [
       Icons.book,
