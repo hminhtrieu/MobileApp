@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
+import '../models/flashcard_model.dart';
 
 class FlashcardController {
   final int documentId;
@@ -18,17 +17,7 @@ class FlashcardController {
       isLoading = true;
       onUpdate();
 
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'learning.db');
-      final Database db = await openDatabase(path);
-
-      final result = await db.query(
-        'Flashcard',
-        where: 'document_id = ?',
-        whereArgs: [documentId],
-        orderBy: 'card_id ASC',
-      );
-      flashcards = List<Map<String, dynamic>>.from(result);
+      flashcards = await FlashcardModel.dbGetFlashcardsByDocument(documentId);
 
       isLoading = false;
       onUpdate();
@@ -51,19 +40,7 @@ class FlashcardController {
     );
 
     try {
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'learning.db');
-      final Database db = await openDatabase(path);
-
-      await db.update(
-        'Flashcard',
-        {
-          'memory_level': newLevel,
-          'updated_at': DateTime.now().toIso8601String(),
-        },
-        where: 'card_id = ?',
-        whereArgs: [cardId],
-      );
+      await FlashcardModel.dbUpdateMemoryLevel(cardId, newLevel);
 
       print(
         '✅ Controller cập nhật thành công CSDL cho Card $cardId -> Level $newLevel',

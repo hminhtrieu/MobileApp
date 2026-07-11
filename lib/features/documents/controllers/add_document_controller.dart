@@ -106,7 +106,7 @@ class AddDocumentController extends ChangeNotifier {
     _setProgress('');
 
     if (_pickedFile == null || _pickedFile!.path.isEmpty) {
-      _setError('Vui lòng chọn một tệp tài liệu học tập thật!');
+      _setError('Vui lòng chọn một tệp tài liệu học tập!');
       return false;
     }
 

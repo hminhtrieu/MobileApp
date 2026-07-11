@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:flashcard/core/database/database_helper.dart';
 
 class QuizModel {
   final int? questionId;
@@ -34,5 +36,36 @@ class QuizModel {
       createdAt: map['created_at'] as String,
       documentId: map['document_id'] as int,
     );
+  }
+
+  static Future<List<Map<String, dynamic>>> dbGetQuizzesByDocument(int documentId) async {
+    final db = await DatabaseHelper.instance.database;
+    final result = await db.query(
+      'Quiz',
+      where: 'document_id = ?',
+      whereArgs: [documentId],
+      orderBy: 'question_id ASC',
+    );
+    return List<Map<String, dynamic>>.from(result);
+  }
+
+  static Future<void> dbSaveQuizResult(int documentId, int correctCount, int totalQuestions) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // Lấy attempt_number hiện tại (số lần làm bài trước đó + 1)
+    final attemptQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Quiz_Result WHERE document_id = ?', [documentId]);
+    int attemptNumber = (Sqflite.firstIntValue(attemptQuery) ?? 0) + 1;
+
+    // Tính điểm hệ 10
+    double score = (correctCount / totalQuestions) * 10;
+
+    await db.insert('Quiz_Result', {
+      'correct_answers': correctCount,
+      'total_questions': totalQuestions,
+      'score': score,
+      'attempt_number': attemptNumber,
+      'created_at': DateTime.now().toIso8601String(),
+      'document_id': documentId,
+    });
   }
 }

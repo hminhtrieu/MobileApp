@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
+import '../models/quiz_model.dart';
 
 class QuizController {
   final int documentId;
@@ -30,17 +29,7 @@ class QuizController {
       isLoading = true;
       onUpdate();
 
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'learning.db');
-      final Database db = await openDatabase(path);
-
-      // Thực hiện truy vấn theo đúng cấu trúc bảng Quiz trong ERD
-      quizQuestions = await db.query(
-        'Quiz',
-        where: 'document_id = ?',
-        whereArgs: [documentId],
-        orderBy: 'question_id ASC',
-      );
+      quizQuestions = await QuizModel.dbGetQuizzesByDocument(documentId);
 
       isLoading = false;
       startTimer(onUpdate);
@@ -103,26 +92,8 @@ class QuizController {
   // 6. Lưu kết quả vào CSDL
   Future<void> _saveQuizResult() async {
     try {
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'learning.db');
-      final Database db = await openDatabase(path);
-
-      // Lấy attempt_number hiện tại (số lần làm bài trước đó + 1)
-      final attemptQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Quiz_Result WHERE document_id = ?', [documentId]);
-      int attemptNumber = (Sqflite.firstIntValue(attemptQuery) ?? 0) + 1;
-
-      // Tính điểm hệ 10
-      double score = (correctCount / quizQuestions.length) * 10;
-
-      await db.insert('Quiz_Result', {
-        'correct_answers': correctCount,
-        'total_questions': quizQuestions.length,
-        'score': score,
-        'attempt_number': attemptNumber,
-        'created_at': DateTime.now().toIso8601String(),
-        'document_id': documentId,
-      });
-      print('✅ Đã lưu kết quả bài Quiz: Điểm $score, Lần làm $attemptNumber');
+      await QuizModel.dbSaveQuizResult(documentId, correctCount, quizQuestions.length);
+      print('✅ Đã lưu kết quả bài Quiz: ${quizQuestions.length} câu');
     } catch (e) {
       print('❌ Lỗi khi lưu kết quả bài Quiz: $e');
     }
