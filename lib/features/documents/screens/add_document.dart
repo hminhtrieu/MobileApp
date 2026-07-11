@@ -64,21 +64,28 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
     return AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(color: Color(0xFF1C648E)),
-          const SizedBox(height: 16),
-          Text(
-            'n8n AI đang tiến hành phân tích tệp thật,\ntóm tắt văn bản và kiến tạo học liệu...',
-            style: GoogleFonts.quicksand(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+      content: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: Color(0xFF1C648E)),
+                const SizedBox(height: 16),
+                Text(
+                  _controller.progressStatus.isEmpty 
+                      ? 'Đang khởi tạo kết nối n8n...'
+                      : _controller.progressStatus,
+                  style: GoogleFonts.quicksand(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            );
+          }
+        ),
     );
   }
 

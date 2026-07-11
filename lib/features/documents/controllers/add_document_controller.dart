@@ -93,8 +93,17 @@ class AddDocumentController extends ChangeNotifier {
     }
   }
 
+  String _progressStatus = '';
+  String get progressStatus => _progressStatus;
+
+  void _setProgress(String status) {
+    _progressStatus = status;
+    notifyListeners();
+  }
+
   Future<bool> uploadAndProcessDocument(int subjectId) async {
     _setError(null);
+    _setProgress('');
 
     if (_pickedFile == null || _pickedFile!.path.isEmpty) {
       _setError('Vui lòng chọn một tệp tài liệu học tập thật!');
@@ -106,108 +115,109 @@ class AddDocumentController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    int targetDocId = -1;
+
     try {
       final newDoc = DocumentModel(
         folderName: themeName,
         fileName: _pickedFile!.name,
         filePath: _pickedFile!.path,
-        summaryContext: 'Đang chờ n8n AI phân tích...',
+        summaryContext: 'Đang xử lý...',
         createdAt: DateTime.now().toIso8601String(),
         subjectId: subjectId,
       );
 
-      int targetDocId = await DocumentModel.dbInsertDocument(newDoc);
+      targetDocId = await DocumentModel.dbInsertDocument(newDoc);
 
-      try {
-        final url = 'http://127.0.0.1:5678/webhook-test/upload-document';
+      final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 300);
+      dio.options.receiveTimeout = const Duration(seconds: 300);
 
-        final dio = Dio();
-        dio.options.connectTimeout = const Duration(seconds: 300);
-        dio.options.receiveTimeout = const Duration(seconds: 300);
+      // --- GỌI N8N TRONG 1 NHỊP DUY NHẤT ---
+      _setProgress('Đang chờ AI phân tích (Có thể mất 1-2 phút)...');
+      final url = 'http://127.0.0.1:5678/webhook-test/upload-document';
 
-        FormData formData = FormData.fromMap({
-          'document_id': targetDocId.toString(),
-          'subject_id': subjectId.toString(),
-          'folder_name': themeName,
-          'file': await MultipartFile.fromFile(
-            _pickedFile!.path,
-            filename: _pickedFile!.name,
-          ),
-        });
+      FormData formData = FormData.fromMap({
+        'document_id': targetDocId.toString(),
+        'subject_id': subjectId.toString(),
+        'folder_name': themeName,
+        'file': MultipartFile.fromBytes(
+          await _pickedFile!.readAsBytes(),
+          filename: _pickedFile!.name,
+        ),
+      });
 
-        var response = await dio.post(url, data: formData);
+      var response = await dio.post(url, data: formData);
 
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> n8nRawResponse = response.data is String
-              ? jsonDecode(response.data)
-              : response.data;
+      if (response.statusCode == 200) {
+        var decodedData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
+        Map<String, dynamic> n8nRawResponse;
 
-          bool isSyncSuccess = await _syncController.importN8nDataToDatabase(
-            targetDocId,
-            n8nRawResponse,
+        if (decodedData is List && decodedData.isNotEmpty) {
+          // N8n thường hay trả về một mảng chứa 1 object
+          n8nRawResponse = Map<String, dynamic>.from(decodedData.first);
+        } else if (decodedData is Map) {
+          n8nRawResponse = Map<String, dynamic>.from(decodedData);
+        } else {
+          throw FormatException(
+            'Kiểu dữ liệu từ n8n không phải là JSON Object hoặc Array hợp lệ',
           );
+        }
 
-          if (isSyncSuccess) {
-            print('💾 SQLite đã ghi dữ liệu xong. Kích hoạt lệnh copy file...');
-            await _cuopFileDatabase();
-            _isLoading = false;
-            notifyListeners();
-            return true;
-          } else {
-            await DocumentModel.dbDeleteDocument(targetDocId);
-            _setError(
-              'Lỗi phân rã cấu trúc JSON khi rải dữ liệu xuống CSDL cục bộ!',
-            );
-          }
+        bool isSyncSuccess = await _syncController.importN8nDataToDatabase(
+          targetDocId,
+          n8nRawResponse,
+        );
+
+        if (isSyncSuccess) {
+          print('💾 SQLite đã ghi dữ liệu xong. Kích hoạt lệnh copy file...');
+          await _cuopFileDatabase();
+          _isLoading = false;
+          _setProgress('');
+          notifyListeners();
+          return true;
         } else {
           await DocumentModel.dbDeleteDocument(targetDocId);
-          _setError('Cổng n8n báo lỗi hệ thống: ${response.statusCode}');
-        }
-      } catch (e) {
-        await DocumentModel.dbDeleteDocument(targetDocId);
-        if (e is DioException) {
-          if (e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.receiveTimeout) {
-            _setError(
-              'Máy chủ AI đang xử lý quá lâu hoặc quá tải (Timeout). Vui lòng thử lại.',
-            );
-          } else if (e.type == DioExceptionType.connectionError) {
-            _setError(
-              'Không thể kết nối đến máy chủ n8n. Vui lòng kiểm tra lại server hoặc mạng internet.',
-            );
-          } else if (e.response != null) {
-            final statusCode = e.response!.statusCode;
-            if (statusCode == 429) {
-              _setError(
-                'Bạn đã gửi quá nhiều yêu cầu. Hệ thống AI đang bị giới hạn, vui lòng chờ một lát.',
-              );
-            } else if (statusCode == 401 || statusCode == 403) {
-              _setError(
-                'Hệ thống n8n báo lỗi xác thực hoặc đã hết Token API của mô hình AI.',
-              );
-            } else if (statusCode != null && statusCode >= 500) {
-              _setError(
-                'Máy chủ n8n đang gặp lỗi nội bộ không thể xử lý ($statusCode).',
-              );
-            } else {
-              _setError('Máy chủ AI trả về lỗi không xác định ($statusCode).');
-            }
-          } else {
-            _setError(
-              'Mất kết nối mạng khi đang xử lý hoặc server n8n chưa hoạt động.',
-            );
-          }
-        } else {
           _setError(
-            'Đã có lỗi hệ thống xảy ra trong quá trình xử lý luồng AI.',
+            'Lỗi phân rã cấu trúc JSON khi rải dữ liệu xuống CSDL cục bộ!',
           );
         }
+      } else {
+        await DocumentModel.dbDeleteDocument(targetDocId);
+        _setError('Cổng n8n báo lỗi hệ thống: ${response.statusCode}');
       }
     } catch (e) {
-      _setError('Hệ thống gặp sự cố khi khởi tạo chủ đề mới.');
+      if (targetDocId != -1) {
+        await DocumentModel.dbDeleteDocument(targetDocId);
+      }
+
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          _setError('AI xử lý quá lâu (Timeout). Vui lòng thử lại.');
+        } else if (e.type == DioExceptionType.connectionError) {
+          _setError(
+            'Không thể kết nối đến máy chủ n8n. Hãy kiểm tra lệnh adb reverse.',
+          );
+        } else {
+          _setError(
+            'Máy chủ AI báo lỗi: ${e.response?.statusCode ?? "Không xác định"}',
+          );
+        }
+      } else {
+        _setError('Lỗi hệ thống: $e');
+      }
+
+      _isLoading = false;
+      _setProgress('');
+      notifyListeners();
+      return false;
     }
 
     _isLoading = false;
+    _setProgress('');
     notifyListeners();
     return false;
   }

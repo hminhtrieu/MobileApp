@@ -12,20 +12,21 @@ class SyncController {
     // Sử dụng Transaction bảo đảm tính toàn vẹn dữ liệu (Nếu lỗi một dòng, tự hủy toàn bộ chu kỳ ghi)
     return await db.transaction((txn) async {
       try {
-        // 1. Kiểm tra sự tồn tại của trường dữ liệu "output" từ n8n
-        if (!n8nRawResponse.containsKey('output')) {
-          print("❌ Lỗi: Phản hồi thiếu cấu trúc trường 'output'");
-          return false;
+        // 1. Lấy dữ liệu (Hỗ trợ cả chuẩn kép output string hoặc JSON trực tiếp)
+        Map<String, dynamic> cleanData;
+        if (n8nRawResponse.containsKey('output') && n8nRawResponse['output'] is String) {
+          try {
+            cleanData = jsonDecode(n8nRawResponse['output']);
+          } catch (e) {
+            cleanData = n8nRawResponse;
+          }
+        } else {
+          cleanData = n8nRawResponse; // Trực tiếp
         }
 
-        String outputString = n8nRawResponse['output'];
-
-        // 2. GIẢI MÃ LẦN 2 (Double Decode): Biến chuỗi text chứa \n thành Map sạch
-        Map<String, dynamic> cleanData = jsonDecode(outputString);
-
-        // 3. CẬP NHẬT TÓM TẮT TÀI LIỆU ( summary_context)
-        if (cleanData.containsKey('summary_context')) {
-          String summary = cleanData['summary_context'];
+        // 3. CẬP NHẬT TÓM TẮT TÀI LIỆU
+        if (cleanData.containsKey('summary_context') && cleanData['summary_context'] != null) {
+          String summary = cleanData['summary_context'].toString();
           await txn.update(
             'Document',
             {'summary_context': summary},
@@ -38,61 +39,111 @@ class SyncController {
 
         // 4. DUYỆT VÀ CHÈN LỚP FLASHCARD
         if (cleanData.containsKey('flashcards')) {
-          List<dynamic> flashcardList = cleanData['flashcards'];
+          var rawCards = cleanData['flashcards'];
+          List<dynamic> flashcardList = [];
+          
+          if (rawCards is String) {
+            try {
+              String cleanRaw = rawCards;
+              final RegExp arrayRegExp = RegExp(r'\[.*\]', dotAll: true);
+              final Match? match = arrayRegExp.firstMatch(cleanRaw);
+              
+              if (match != null) {
+                cleanRaw = match.group(0)!;
+              } else {
+                final RegExp objRegExp = RegExp(r'\{.*\}', dotAll: true);
+                final Match? objMatch = objRegExp.firstMatch(cleanRaw);
+                if (objMatch != null) cleanRaw = objMatch.group(0)!;
+              }
+              
+              var decoded = jsonDecode(cleanRaw);
+              if (decoded is List) flashcardList = decoded;
+              else if (decoded is Map && decoded.containsKey('flashcards')) flashcardList = decoded['flashcards'];
+            } catch (e) {
+              print('Lỗi parse flashcards string: $e');
+            }
+          } else if (rawCards is List) {
+            flashcardList = rawCards;
+          } else if (rawCards is Map && rawCards.containsKey('flashcards')) {
+            flashcardList = rawCards['flashcards'];
+          }
 
           for (var card in flashcardList) {
-            await txn.insert('Flashcard', {
-              'front_text': card['front_text'],
-              'back_text': card['back_text'],
-              'memory_level':
-                  1, // Khởi tạo ở Hộp số 1 theo phương pháp Leitner[cite: 1]
-              'created_at': now,
-              'updated_at': now,
-              'document_id': docId,
-            });
+            if (card is Map) {
+              String? front = card['front_text']?.toString() ?? card['front']?.toString() ?? card['question']?.toString() ?? card['term']?.toString();
+              String? back = card['back_text']?.toString() ?? card['back']?.toString() ?? card['answer']?.toString() ?? card['definition']?.toString();
+
+              await txn.insert('Flashcard', {
+                'front_text': front ?? 'Nội dung trống',
+                'back_text': back ?? 'Nội dung trống',
+                'memory_level': 1,
+                'created_at': now,
+                'updated_at': now,
+                'document_id': docId,
+              });
+            }
           }
         }
 
         // 5. DUYỆT VÀ CHÈN LỚP QUIZ TRẮC NGHIỆM
         if (cleanData.containsKey('quizzes')) {
-          List<dynamic> quizList = cleanData['quizzes'];
+          var rawQuizzes = cleanData['quizzes'];
+          List<dynamic> quizList = [];
+          
+          if (rawQuizzes is String) {
+            try {
+              String cleanRaw = rawQuizzes;
+              final RegExp arrayRegExp = RegExp(r'\[.*\]', dotAll: true);
+              final Match? match = arrayRegExp.firstMatch(cleanRaw);
+              
+              if (match != null) {
+                cleanRaw = match.group(0)!;
+              } else {
+                final RegExp objRegExp = RegExp(r'\{.*\}', dotAll: true);
+                final Match? objMatch = objRegExp.firstMatch(cleanRaw);
+                if (objMatch != null) cleanRaw = objMatch.group(0)!;
+              }
+
+              var decoded = jsonDecode(cleanRaw);
+              if (decoded is List) quizList = decoded;
+              else if (decoded is Map && decoded.containsKey('quizzes')) quizList = decoded['quizzes'];
+            } catch (e) {
+              print('Lỗi parse quizzes string: $e');
+            }
+          } else if (rawQuizzes is List) {
+            quizList = rawQuizzes;
+          } else if (rawQuizzes is Map && rawQuizzes.containsKey('quizzes')) {
+            quizList = rawQuizzes['quizzes'];
+          }
 
           for (var quiz in quizList) {
-            // Chuẩn hóa trường correct_option từ chuỗi 'option_a' về ký tự 'A' để khớp thiết kế bảng[cite: 1]
-            String rawCorrectOption = quiz['correct_option'] ?? 'option_a';
-            String formattedOption = 'A';
+            if (quiz is Map) {
+              String rawCorrectOption = quiz['correct_option']?.toString().toLowerCase() ?? 'a';
+              String formattedOption = 'A';
 
-            if (rawCorrectOption == 'option_b' || rawCorrectOption == 'B') {
-              formattedOption = 'B';
-            }
-            if (rawCorrectOption == 'option_c' || rawCorrectOption == 'C') {
-              formattedOption = 'C';
-            }
-            if (rawCorrectOption == 'option_d' || rawCorrectOption == 'D') {
-              formattedOption = 'D';
-            }
+              if (rawCorrectOption.contains('b')) formattedOption = 'B';
+              else if (rawCorrectOption.contains('c')) formattedOption = 'C';
+              else if (rawCorrectOption.contains('d')) formattedOption = 'D';
 
-            await txn.insert('Quiz', {
-              'question_content': quiz['question_content'],
-              'option_a': quiz['option_a'],
-              'option_b': quiz['option_b'],
-              'option_c': quiz['option_c'],
-              'option_d': quiz['option_d'],
-              'correct_option':
-                  formattedOption, // Lưu duy nhất ký tự 'A', 'B', 'C' hoặc 'D'[cite: 1]
-              'created_at': now,
-              'document_id': docId,
-            });
+              await txn.insert('Quiz', {
+                'question_content': quiz['question_content']?.toString() ?? 'Câu hỏi trống',
+                'option_a': quiz['option_a']?.toString() ?? '',
+                'option_b': quiz['option_b']?.toString() ?? '',
+                'option_c': quiz['option_c']?.toString() ?? '',
+                'option_d': quiz['option_d']?.toString() ?? '',
+                'correct_option': formattedOption,
+                'created_at': now,
+                'document_id': docId,
+              });
+            }
           }
         }
 
-        print(
-          "🚀 [SQLITE SYNC] Đã rải phẳng toàn bộ học liệu của Document ID $docId xuống máy thành công!",
-        );
+        print("🚀 [SQLITE SYNC] Đã rải phẳng toàn bộ học liệu của Document ID $docId xuống máy thành công!");
         return true;
       } catch (e) {
         print("❌ Lỗi xảy ra trong tiến trình bóc tách đồng bộ dữ liệu: $e");
-        return false; // Trả về false để Rollback lại database tránh sinh rác dữ liệu
+        return false;
       }
     });
   }
