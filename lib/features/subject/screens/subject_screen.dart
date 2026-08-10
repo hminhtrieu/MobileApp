@@ -111,21 +111,15 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
     return AppBar(
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const Icon(Icons.arrow_back, color: Color(0xFF1C648E)),
-      title: const Text(
+      title: Text(
         'Không gian học tập',
-        style: TextStyle(
-          color: Color(0xFF1C648E),
+        style: GoogleFonts.quicksand(
+          color: const Color(0xFF1C648E),
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: 22,
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.more_vert, color: Color(0xFF1C648E)),
-          onPressed: () {},
-        ),
-      ],
+      centerTitle: true,
     );
   }
 
@@ -140,7 +134,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chào mừng trở lại! Cùng khám phá những kiến thức thú vị hôm nay nào.',
+          'Chào mừng trở lại! \nChúc bạn một ngày tốt lành.',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -216,148 +210,156 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
         Theme.of(context).textTheme.bodyMedium?.color ??
         const Color(0xFF41484E);
 
-    return Slidable(
-      key: Key(subject.subjectId.toString()),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        extentRatio: 0.3,
-        children: [
-          CustomSlidableAction(
-            onPressed: (context) async {
-              final shouldDelete = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext ctx) {
-                  return AlertDialog(
-                    title: Text(
-                      'Xác nhận xóa',
-                      style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
-                    ),
-                    content: Text(
-                      'Bạn có chắc chắn muốn xóa môn học "${subject.subjectName}"? Mọi tài liệu bên trong cũng sẽ bị xóa vĩnh viễn.',
-                      style: GoogleFonts.quicksand(),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Hủy'),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text(
-                          'Xóa',
-                          style: TextStyle(color: Colors.white),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Slidable(
+        key: Key(subject.subjectId.toString()),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          extentRatio: 0.3,
+          children: [
+            CustomSlidableAction(
+              onPressed: (context) async {
+                final shouldDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext ctx) {
+                    return AlertDialog(
+                      title: Text(
+                        'Xác nhận xóa',
+                        style: GoogleFonts.quicksand(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  );
-                },
-              );
-
-              if (shouldDelete == true && subject.subjectId != null) {
-                await SubjectModel.dbDeleteSubject(subject.subjectId!);
-                _refreshSubject();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã xóa môn học ${subject.subjectName}'),
-                    ),
-                  );
-                }
-              }
-            },
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            padding: const EdgeInsets.only(bottom: 16),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.delete, size: 28),
-                SizedBox(height: 4),
-                Text(
-                  'Xóa',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 1),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DocumentListScreen(
-                    subjectId: subject.subjectId!,
-                    subjectName: subject.subjectName,
-                  ),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: const Color(
-                            0xFF1C648E,
-                          ).withValues(alpha: 0.1),
-                          child: Icon(
-                            // Giả định hàm này nằm trong file Model của em để lấy icon ngẫu nhiên
-                            subject.getRandomSubjectIcon(),
-                            color: const Color(0xFF1C648E),
+                      content: Text(
+                        'Bạn có chắc chắn muốn xóa môn học "${subject.subjectName}"? Mọi tài liệu bên trong cũng sẽ bị xóa vĩnh viễn.',
+                        style: GoogleFonts.quicksand(),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Hủy'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              255,
+                              60,
+                              21,
+                              79,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                subject.subjectName,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                // Format lại chuỗi hiển thị ngày tạo từ CSDL thật
-                                'Ngày tạo: ${subject.createdAt.length > 10 ? subject.createdAt.substring(0, 10) : subject.createdAt}',
-                                style: TextStyle(
-                                  color: secondaryTextColor,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: const Text(
+                            'Xóa',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
+                    );
+                  },
+                );
+
+                if (shouldDelete == true && subject.subjectId != null) {
+                  await SubjectModel.dbDeleteSubject(subject.subjectId!);
+                  _refreshSubject();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã xóa môn học ${subject.subjectName}'),
+                      ),
+                    );
+                  }
+                }
+              },
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.delete, size: 28),
+                  SizedBox(height: 4),
+                  Text(
+                    'Xóa',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DocumentListScreen(
+                      subjectId: subject.subjectId!,
+                      subjectName: subject.subjectName,
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Color(0xFF1C648E)),
-                ],
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: const Color(
+                              0xFF1C648E,
+                            ).withValues(alpha: 0.1),
+                            child: Icon(
+                              // Giả định hàm này nằm trong file Model của em để lấy icon ngẫu nhiên
+                              subject.getRandomSubjectIcon(),
+                              color: const Color(0xFF1C648E),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  subject.subjectName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  // Format lại chuỗi hiển thị ngày tạo từ CSDL thật
+                                  'Ngày tạo: ${subject.createdAt.length > 10 ? subject.createdAt.substring(0, 10) : subject.createdAt}',
+                                  style: TextStyle(
+                                    color: secondaryTextColor,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFF1C648E)),
+                  ],
+                ),
               ),
             ),
           ),

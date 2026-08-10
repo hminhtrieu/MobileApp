@@ -12,7 +12,7 @@ class DocumentListScreen extends StatefulWidget {
   final int subjectId;
   final String subjectName;
 
-  const DocumentListScreen({
+  DocumentListScreen({
     super.key,
     required this.subjectId,
     required this.subjectName,
@@ -23,6 +23,7 @@ class DocumentListScreen extends StatefulWidget {
 }
 
 class _DocumentListScreenState extends State<DocumentListScreen> {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   late final DocumentListController _controller;
 
   @override
@@ -40,7 +41,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       appBar: _buildAppBar(),
       body: SafeArea(
         child: Column(
@@ -54,16 +55,16 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const CircularProgressIndicator(
-                            color: Color(0xFF1C648E),
+                          CircularProgressIndicator(
+                            color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           Text(
                             'Đang nạp danh sách chủ đề...',
                             style: GoogleFonts.quicksand(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF41484E),
+                              color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
                             ),
                           ),
                         ],
@@ -78,8 +79,8 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   final documentList = _controller.documents;
 
                   return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
+                    physics: BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
                       horizontal: 16.0,
                       vertical: 12.0,
                     ),
@@ -88,7 +89,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                         if (documentList.isEmpty)
                           Center(
                             child: Padding(
-                              padding: const EdgeInsets.all(40.0),
+                              padding: EdgeInsets.all(40.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -97,7 +98,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                                     size: 80,
                                     color: Colors.grey[400],
                                   ),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   Text(
                                     'Chưa có chủ đề nào trong môn học này. Hãy thêm mới!',
                                     textAlign: TextAlign.center,
@@ -112,7 +113,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                           )
                         else
                           _buildThemeCardList(documentList),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         _buildAddThemeButton(),
                       ],
                     ),
@@ -128,18 +129,18 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       elevation: 0.5,
       scrolledUnderElevation: 0,
       centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF1C648E)),
+        icon: Icon(Icons.arrow_back, color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         'Môn học: ${widget.subjectName}',
-        style: const TextStyle(
-          color: Color(0xFF1C648E),
+        style: TextStyle(
+          color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -150,7 +151,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   Widget _buildThemeCardList(List<DocumentModel> documentList) {
     return ListView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: documentList.length,
       itemBuilder: (context, index) {
         return _buildThemeCard(documentList[index], index + 1);
@@ -160,17 +161,17 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
 
   Widget _buildThemeCard(DocumentModel doc, int index) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 24),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: (isDark ? Colors.grey[850]! : Colors.white),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E2E5), width: 1.5),
+        border: Border.all(color: (isDark ? Colors.grey[700]! : Color(0xFFE2E2E5)), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1C648E).withValues(alpha: 0.6),
+            color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)).withValues(alpha: 0.6),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -183,28 +184,28 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 172, 226, 249),
-                  border: Border.all(color: Colors.white),
+                  color: Color.fromARGB(255, 172, 226, 249),
+                  border: Border.all(color: (isDark ? Colors.grey[850]! : Colors.white)),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Icon(
                   doc.getRandomDocumentIcon(),
-                  color: const Color(0xFF1C648E),
+                  color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  doc.folderName.replaceAll(RegExp(r'Chủ đề \d+: '), ''),
+                  'Chủ đề: ${doc.folderName.replaceAll(RegExp(r'Chủ đề \d+: '), '')}',
                   style: GoogleFonts.quicksand(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1C1E),
+
+                    color: (isDark ? Colors.white : Color(0xFF1A1C1E)),
                   ),
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Color(0xFF71787f)),
+                icon: Icon(Icons.more_vert, color: (isDark ? Colors.grey[400]! : Color(0xFF71787f))),
                 onSelected: (value) async {
                   if (value == 'edit') {
                     _showEditDialog(doc);
@@ -213,17 +214,17 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit, size: 20, color: Color(0xFF1C648E)),
+                        Icon(Icons.edit, size: 20, color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))),
                         SizedBox(width: 8),
                         Text('Đổi tên chủ đề'),
                       ],
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -237,22 +238,22 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F6),
+              color: (isDark ? Colors.grey[800]! : Color(0xFFF3F3F6)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               'Tệp: ${doc.fileName}',
-              style: GoogleFonts.quicksand(fontSize: 14, color: Colors.black87),
+              style: GoogleFonts.quicksand(fontSize: 14, color: (isDark ? Colors.grey[300]! : Colors.black87)),
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 24),
 
           Row(
             children: [
@@ -269,7 +270,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   );
                 }),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: _buildChunkyButton(
                   'BÀI TẬP TRẮC NGHIỆM',
@@ -289,67 +290,11 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: _buildChunkyButton(
-              'TẢI THÊM TÀI LIỆU',
-              Icons.upload_file,
-              () async {
-                try {
-                  await _controller.uploadAdditionalDocument(doc);
-                } catch (e) {
-                  String error = e.toString();
-                  if (error.startsWith('START_UPLOAD:')) {
-                    final parts = error
-                        .replaceAll('START_UPLOAD:', '')
-                        .split('|');
-                    if (parts.length == 2) {
-                      final filePath = parts[0];
-                      final fileName = parts[1];
-
-                      _showLoadingDialog();
-                      try {
-                        await _controller.processAdditionalUpload(
-                          doc,
-                          filePath,
-                          fileName,
-                        );
-                        if (mounted) {
-                          Navigator.pop(context); // Đóng Loading Dialog
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Tải thêm tài liệu thành công!',
-                                style: GoogleFonts.quicksand(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (uploadError) {
-                        if (mounted) {
-                          Navigator.pop(context); // Đóng Loading Dialog
-                          _showErrorSnackBar(uploadError.toString());
-                        }
-                      }
-                    }
-                  } else {
-                    _showErrorSnackBar(error);
-                  }
-                }
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
+          SizedBox(height: 16),
 
           Row(
             children: [
               Expanded(
-                flex: 2,
                 child: _buildChunkyButton(
                   'XEM TÀI LIỆU TÓM TẮT',
                   Icons.psychology,
@@ -364,15 +309,6 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 1,
-                child: _buildChunkyButton('SHARE TÀI LIỆU', Icons.share, () {
-                  print(
-                    "Kích hoạt luồng packAndShareFolder() cho Doc ID: ${doc.documentId}",
-                  );
-                }),
-              ),
             ],
           ),
         ],
@@ -381,8 +317,9 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   }
 
   Widget _buildAddThemeButton() {
-    return TextButton(
-      onPressed: () async {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () async {
         final bool? isSyncDone = await Navigator.push(
           context,
           MaterialPageRoute(
@@ -397,21 +334,28 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           _controller.refreshDocuments();
         }
       },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.add, color: Color(0xFF41484E), size: 18),
-          const SizedBox(width: 8),
-          Text(
-            'THÊM CHỦ ĐỀ MỚI',
-            style: GoogleFonts.quicksand(
-              color: const Color(0xFF41484E),
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 22),
+        decoration: BoxDecoration(
+          border: Border.all(color: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)), width: 1.5),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add, color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)), size: 18),
+            SizedBox(width: 8),
+            Text(
+              'THÊM CHỦ ĐỀ MỚI',
+              style: GoogleFonts.quicksand(
+                color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -423,23 +367,23 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   ) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16, color: const Color(0xFF004B70)),
+      icon: Icon(icon, size: 16, color: (isDark ? Colors.blue[100]! : Color(0xFF004B70))),
       label: Text(
         text,
         style: GoogleFonts.quicksand(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF41484E),
+          color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
         ),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFCAE6FF),
-        foregroundColor: const Color(0xFF004B70),
+        backgroundColor: (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF)),
+        foregroundColor: (isDark ? Colors.blue[100]! : Color(0xFF004B70)),
         elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(26),
-          side: const BorderSide(color: Colors.white),
+          side: BorderSide(color: (isDark ? Colors.grey[850]! : Colors.white)),
         ),
       ),
     );
@@ -455,13 +399,13 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
 
   Widget _buildLoadingWidget() {
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: (isDark ? Colors.grey[850]! : Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: Color(0xFF1C648E)),
-          const SizedBox(height: 16),
+          CircularProgressIndicator(color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))),
+          SizedBox(height: 16),
           Text(
             'Đang tải lên và xử lý dữ liệu với AI...\nQuá trình này có thể mất vài phút.',
             style: GoogleFonts.quicksand(
@@ -482,7 +426,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           message,
           style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFFBA1A1A),
+        backgroundColor: (isDark ? Color(0xFFEF9A9A) : Color(0xFFBA1A1A)),
       ),
     );
   }
@@ -501,13 +445,13 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           ),
           content: TextField(
             controller: textController,
-            decoration: const InputDecoration(hintText: 'Nhập tên mới'),
+            decoration: InputDecoration(hintText: 'Nhập tên mới'),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
+              child: Text('Hủy'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -524,7 +468,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   }
                 }
               },
-              child: const Text('Lưu'),
+              child: Text('Lưu'),
             ),
           ],
         );
@@ -548,7 +492,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
+              child: Text('Hủy'),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -563,7 +507,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   }
                 }
               },
-              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+              child: Text('Xóa', style: TextStyle(color: (isDark ? Colors.grey[850]! : Colors.white))),
             ),
           ],
         );

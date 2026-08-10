@@ -73,7 +73,7 @@ class DatabaseHelper {
       )
     ''');
     await db.execute('''
-      CREATE TABLE Quiz_Result (
+      CREATE TABLE Result (
         result_id INTEGER PRIMARY KEY AUTOINCREMENT,
         correct_answers INTEGER NOT NULL,
         total_questions INTEGER NOT NULL,

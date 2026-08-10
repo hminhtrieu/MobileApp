@@ -49,17 +49,17 @@ class QuizModel {
     return List<Map<String, dynamic>>.from(result);
   }
 
-  static Future<void> dbSaveQuizResult(int documentId, int correctCount, int totalQuestions) async {
+  static Future<void> dbSaveResult(int documentId, int correctCount, int totalQuestions) async {
     final db = await DatabaseHelper.instance.database;
     
-    // Lấy attempt_number hiện tại (số lần làm bài trước đó + 1)
-    final attemptQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Quiz_Result WHERE document_id = ?', [documentId]);
+    
+    final attemptQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Result WHERE document_id = ?', [documentId]);
     int attemptNumber = (Sqflite.firstIntValue(attemptQuery) ?? 0) + 1;
 
-    // Tính điểm hệ 10
+    
     double score = (correctCount / totalQuestions) * 10;
 
-    await db.insert('Quiz_Result', {
+    await db.insert('Result', {
       'correct_answers': correctCount,
       'total_questions': totalQuestions,
       'score': score,

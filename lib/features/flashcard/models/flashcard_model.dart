@@ -31,8 +31,10 @@ class FlashcardModel {
     );
   }
 
-  // Nạp dữ liệu từ file learning.db theo Document
-  static Future<List<Map<String, dynamic>>> dbGetFlashcardsByDocument(int documentId) async {
+  // Nạp dữ liệu từ learning.db theo Document
+  static Future<List<Map<String, dynamic>>> dbGetFlashcardsByDocument(
+    int documentId,
+  ) async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.query(
       'Flashcard',
@@ -43,7 +45,7 @@ class FlashcardModel {
     return List<Map<String, dynamic>>.from(result);
   }
 
-  // Cập nhật mức độ Leitner (Hộp 1 - 5)
+  // Cập nhật mức độ dễ hoặc khó
   static Future<void> dbUpdateMemoryLevel(int id, int nextLevel) async {
     final db = await DatabaseHelper.instance.database;
     await db.update(

@@ -11,13 +11,17 @@ class FlashcardController {
 
   FlashcardController({required this.documentId});
 
-  // 🗄️ Nạp dữ liệu từ file learning.db
+  // Nạp dữ liệu từ learning.db
   Future<void> loadFlashcards(VoidCallback onUpdate) async {
     try {
       isLoading = true;
       onUpdate();
 
-      flashcards = await FlashcardModel.dbGetFlashcardsByDocument(documentId);
+      List<Map<String, dynamic>> rawFlashcards = await FlashcardModel.dbGetFlashcardsByDocument(documentId);
+      
+      // Tạo bản sao và xáo trộn ngẫu nhiên thứ tự thẻ
+      flashcards = List<Map<String, dynamic>>.from(rawFlashcards);
+      flashcards.shuffle();
 
       isLoading = false;
       onUpdate();
@@ -28,13 +32,12 @@ class FlashcardController {
     }
   }
 
-  // 💾 Cập nhật mức độ ghi nhớ xuống SQLite
+  // Cập nhật mức độ ghi nhớ
   Future<void> updateMemoryLevel(
     int cardId,
     int newLevel,
     VoidCallback onUpdate,
   ) async {
-    // 🌟 DÒNG THÁM TỬ: In ra Terminal để Triệu biết chắc chắn nút bấm đã thông sang Controller
     print(
       '🚀 [CONTROLLER EVENT] Nhận lệnh đánh giá Card ID: $cardId -> Mức độ: $newLevel',
     );
@@ -45,13 +48,9 @@ class FlashcardController {
       print(
         '✅ Controller cập nhật thành công CSDL cho Card $cardId -> Level $newLevel',
       );
-      
-      // Logic lặp lại ngắt quãng dựa trên mức độ:
-      // Khó (1) -> xuất hiện lại sớm (sau 2 thẻ)
-      // Trung bình (2) -> xuất hiện lại muộn hơn (sau 5 thẻ)
-      // Dễ (3) -> đẩy hẳn xuống cuối cùng
+
       final cardToRepeat = Map<String, dynamic>.from(flashcards[currentIndex]);
-      
+
       if (newLevel == 1) {
         int insertIndex = currentIndex + 3;
         if (insertIndex > flashcards.length) insertIndex = flashcards.length;
@@ -70,10 +69,10 @@ class FlashcardController {
     }
   }
 
-  // 🔄 Logic chuyển thẻ tiếp theo
+  // Trở về mặt trước khi đổi câu hỏi
   void nextCard(VoidCallback onUpdate) {
     currentIndex++;
-    isFlipped = false; // Trở về mặt trước khi đổi câu hỏi
+    isFlipped = false;
     onUpdate();
   }
 

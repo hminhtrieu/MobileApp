@@ -69,6 +69,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         title: Text(
           'Thống kê học tập',
           style: GoogleFonts.quicksand(
+            color: const Color(0xFF1C648E),
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -109,7 +110,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final totalQuizzes = data['totalQuizzes'] ?? 0;
 
     final hardCards = data['hardCards'] ?? 0;
-    final mediumCards = data['mediumCards'] ?? 0;
     final easyCards = data['easyCards'] ?? 0;
 
     final averageScore = data['averageScore'] as double? ?? 0.0;
@@ -186,7 +186,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(height: 12),
           _buildMemoryLevelBars(
             hardCards,
-            mediumCards,
             easyCards,
             textColor,
             cardColor,
@@ -450,13 +449,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildMemoryLevelBars(
     int hard,
-    int medium,
     int easy,
     Color textColor,
     Color cardColor,
     bool isDarkMode,
   ) {
-    final total = hard + medium + easy;
+    final total = hard + easy;
     if (total == 0) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -484,8 +482,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         children: [
           _buildBarRow('Chưa thuộc', hard, total, Colors.red, textColor),
-          const SizedBox(height: 12),
-          _buildBarRow('Tạm nhớ', medium, total, Colors.orange, textColor),
           const SizedBox(height: 12),
           _buildBarRow('Đã thuộc', easy, total, Colors.green, textColor),
         ],

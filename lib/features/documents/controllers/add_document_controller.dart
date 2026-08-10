@@ -80,7 +80,13 @@ class AddDocumentController extends ChangeNotifier {
       String docsPath = await getDatabasesPath();
       String sourcePath = p.join(docsPath, 'learning.db');
       String targetPath = '/sdcard/Download/learning_copy.db';
-
+      if (Platform.isWindows) {
+        final dir = Directory('D:\\Download');
+        if (!await dir.exists()) {
+          await dir.create(recursive: true);
+        }
+        targetPath = 'D:\\Download\\learning_copy.db';
+      }
       File sourceFile = File(sourcePath);
       if (await sourceFile.exists()) {
         await sourceFile.copy(targetPath);
@@ -132,11 +138,11 @@ class AddDocumentController extends ChangeNotifier {
       final dio = Dio();
       dio.options.connectTimeout = const Duration(seconds: 300);
       dio.options.receiveTimeout = const Duration(seconds: 300);
-
-      // --- GỌI N8N TRONG 1 NHỊP DUY NHẤT ---
+      dio.options.headers = {
+        'Authorization': 'Bearer my_secure_webhook_token_2026',
+      };
       _setProgress('Đang chờ AI phân tích (Có thể mất 1-2 phút)...');
-      final url = 'http://127.0.0.1:5678/webhook-test/upload-document';
-
+      final url = 'https://trieu-myn8n.me/webhook/upload-document';
       FormData formData = FormData.fromMap({
         'document_id': targetDocId.toString(),
         'subject_id': subjectId.toString(),
@@ -156,7 +162,7 @@ class AddDocumentController extends ChangeNotifier {
         Map<String, dynamic> n8nRawResponse;
 
         if (decodedData is List && decodedData.isNotEmpty) {
-          // N8n thường hay trả về một mảng chứa 1 object
+          // N8n trả về một mảng chứa object
           n8nRawResponse = Map<String, dynamic>.from(decodedData.first);
         } else if (decodedData is Map) {
           n8nRawResponse = Map<String, dynamic>.from(decodedData);
@@ -196,14 +202,12 @@ class AddDocumentController extends ChangeNotifier {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout) {
-          _setError('AI xử lý quá lâu (Timeout). Vui lòng thử lại.');
+          _setError('Xử lý quá lâu (Timeout). Vui lòng thử lại.');
         } else if (e.type == DioExceptionType.connectionError) {
-          _setError(
-            'Không thể kết nối đến máy chủ n8n. Hãy kiểm tra lệnh adb reverse.',
-          );
+          _setError('Không thể kết nối đến máy chủ n8n. Hãy kiểm tra.');
         } else {
           _setError(
-            'Máy chủ AI báo lỗi: ${e.response?.statusCode ?? "Không xác định"}',
+            'Máy chủ báo lỗi: ${e.response?.statusCode ?? "Không xác định"}',
           );
         }
       } else {

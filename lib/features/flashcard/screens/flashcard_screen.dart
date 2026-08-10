@@ -7,7 +7,7 @@ class FlashcardLearnScreen extends StatefulWidget {
   final int documentId;
   final String folderName;
 
-  const FlashcardLearnScreen({
+  FlashcardLearnScreen({
     super.key,
     required this.documentId,
     required this.folderName,
@@ -19,6 +19,7 @@ class FlashcardLearnScreen extends StatefulWidget {
 
 class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     with SingleTickerProviderStateMixin {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   late FlashcardController _controller;
   late AnimationController _flipController;
 
@@ -28,7 +29,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     _controller = FlashcardController(documentId: widget.documentId);
     _flipController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: Duration(milliseconds: 600),
     );
     _controller.loadFlashcards(() => setState(() {}));
   }
@@ -61,17 +62,17 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
   @override
   Widget build(BuildContext context) {
     if (_controller.isLoading) {
-      return const Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
+      return Scaffold(
+        backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF1C648E)),
+          child: CircularProgressIndicator(color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))),
         ),
       );
     }
 
     if (_controller.flashcards.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
+        backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
         appBar: _buildAppBar(context),
         body: Center(
           child: Text(
@@ -80,7 +81,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
             style: GoogleFonts.quicksand(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF41484E),
+              color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
             ),
           ),
         ),
@@ -89,43 +90,43 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
     if (_controller.currentIndex >= _controller.flashcards.length) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
+        backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
         appBar: _buildAppBar(context),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
                   color: Color(0xFFB1EFD8),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.done_all,
                   size: 64,
-                  color: Color(0xFF2C6956),
+                  color: (isDark ? Color(0xFFA5D6A7) : Color(0xFF2C6956)),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Chúc mừng!\nBạn đã ôn tập xong chủ đề này.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.quicksand(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2C6956),
+                  color: (isDark ? Color(0xFFA5D6A7) : Color(0xFF2C6956)),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Quay lại danh sách'),
+                icon: Icon(Icons.arrow_back),
+                label: Text('Quay lại danh sách'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2C6956),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
+                  backgroundColor: (isDark ? Color(0xFFA5D6A7) : Color(0xFF2C6956)),
+                  foregroundColor: (isDark ? Colors.grey[850]! : Colors.white),
+                  padding: EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,
                   ),
@@ -154,19 +155,19 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       appBar: _buildAppBar(context),
       body: Stack(
         children: [
           _buildFloatingBlob(
             top: 100,
             left: -60,
-            color: const Color(0xFF7CB9E8).withOpacity(0.35),
+            color: Color(0xFF7CB9E8).withOpacity(0.35),
           ),
           _buildFloatingBlob(
             bottom: 180,
             right: -40,
-            color: const Color(0xFFAEEDD5).withOpacity(0.35),
+            color: Color(0xFFAEEDD5).withOpacity(0.35),
           ),
 
           SafeArea(
@@ -178,7 +179,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
                 Expanded(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 20.0,
                         vertical: 16.0,
                       ),
@@ -211,7 +212,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
                 _buildHintText(),
                 _buildRatingActions(cardId),
-                const SizedBox(
+                SizedBox(
                   height: 20,
                 ), // Tạo khoảng cách đệm nhẹ dưới đáy thay vì BottomNav cũ
               ],
@@ -225,17 +226,17 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF1C648E)),
+        icon: Icon(Icons.arrow_back, color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         widget.folderName,
         style: GoogleFonts.quicksand(
-          color: const Color(0xFF1C648E),
+          color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
           fontWeight: FontWeight.bold,
           fontSize: 24,
         ),
@@ -265,7 +266,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
   Widget _buildProgressIndicator(double percent) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
       child: Column(
         children: [
           Row(
@@ -276,7 +277,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
                 style: GoogleFonts.quicksand(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF41484E),
+                  color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
                 ),
               ),
               Text(
@@ -284,17 +285,17 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
                 style: GoogleFonts.quicksand(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2C6956),
+                  color: (isDark ? Color(0xFFA5D6A7) : Color(0xFF2C6956)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(
             height: 12,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFCAE6FF),
+              color: (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF)),
               borderRadius: BorderRadius.circular(99),
             ),
             child: Row(
@@ -303,14 +304,14 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
                   flex: (percent * 100).toInt(),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF96D3BD),
+                      color: Color(0xFF96D3BD),
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
                 ),
                 Expanded(
                   flex: 100 - (percent * 100).toInt(),
-                  child: const SizedBox.shrink(),
+                  child: SizedBox.shrink(),
                 ),
               ],
             ),
@@ -325,16 +326,16 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     return Container(
       width: 340,
       height: 380, // Khóa chiều cao cố định cân đối cho form Canvas
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: (isDark ? Colors.grey[850]! : Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFC0C7CF)),
+        border: Border.all(color: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF))),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1C648E).withOpacity(0.15),
+            color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)).withOpacity(0.15),
             blurRadius: 32,
-            offset: const Offset(0, 12),
+            offset: Offset(0, 12),
           ),
         ],
       ),
@@ -344,40 +345,40 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
           Container(
             width: 44,
             height: 44, // Giảm kích thước từ 64 xuống 44
-            decoration: const BoxDecoration(
-              color: Color(0xFFCAE6FF),
+            decoration: BoxDecoration(
+              color: (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF)),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.history_edu,
-              color: Color(0xFF1C648E),
+              color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
               size: 24,
             ), // Thu nhỏ cỡ icon xuống 24
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             'THUẬT NGỮ',
             style: GoogleFonts.quicksand(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1C648E),
+              color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
 
           // 🌟 BỌC SINGLECHILDSCROLLVIEW: Cho phép kéo cuộn văn bản nếu thuật ngữ quá dài
           Expanded(
             child: Center(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: BouncingScrollPhysics(),
                 child: Text(
                   term,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.quicksand(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1C1E),
+                    color: (isDark ? Colors.white : Color(0xFF1A1C1E)),
                   ),
                 ),
               ),
@@ -393,16 +394,16 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
     return Container(
       width: 340,
       height: 380,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: (isDark ? Colors.grey[850]! : Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD0D4F1)),
+        border: Border.all(color: Color(0xFFD0D4F1)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1C648E).withOpacity(0.1),
+            color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)).withOpacity(0.1),
             blurRadius: 32,
-            offset: const Offset(0, 12),
+            offset: Offset(0, 12),
           ),
         ],
       ),
@@ -412,40 +413,40 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
           Container(
             width: 44,
             height: 44, // Giảm kích thước từ 64 xuống 44
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Color(0xFFE0E4FF),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.lightbulb,
               color: Color(0xFF3F4E93),
               size: 24,
             ), // Thu nhỏ cỡ icon xuống 24
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             'ĐỊNH NGHĨA',
             style: GoogleFonts.quicksand(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF3F4E93),
+              color: Color(0xFF3F4E93),
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
 
           // 🌟 FIX LỖI OVERFLOW: Cho phép kéo cuộn nội dung định nghĩa dài thoải mái mà không bị gạch sọc vàng đen hệ thống!
           Expanded(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              physics: BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: 4),
               child: Text(
                 definition,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.quicksand(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1A1C1E),
+                  color: (isDark ? Colors.white : Color(0xFF1A1C1E)),
                   height: 1.5,
                 ),
               ),
@@ -458,18 +459,18 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
   Widget _buildHintText() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.only(bottom: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.touch_app, size: 16, color: Color(0xFF41484E)),
-          const SizedBox(width: 6),
+          Icon(Icons.touch_app, size: 16, color: (isDark ? Colors.grey[300]! : Color(0xFF41484E))),
+          SizedBox(width: 6),
           Text(
             'Chạm để lật thẻ',
             style: GoogleFonts.quicksand(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF41484E),
+              color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
             ),
           ),
         ],
@@ -479,48 +480,48 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
 
   Widget _buildRatingActions(int cardId) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: EdgeInsets.symmetric(horizontal: 20.0),
       child: GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 1.8,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: NeverScrollableScrollPhysics(),
         children: [
           _buildChunkyButton(
             label: 'Đã thuộc',
             icon: Icons.skip_next,
-            bg: const Color(0xFFEBEBEB),
-            textCol: const Color(0xFF41484E),
-            borderCol: const Color(0xFFC0C7CF),
+            bg: (isDark ? Color(0xFF303030) : Color(0xFFEBEBEB)),
+            textCol: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
+            borderCol: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)),
             level: 0,
             cardId: cardId,
           ),
           _buildChunkyButton(
             label: 'Khó',
             icon: Icons.sentiment_very_dissatisfied,
-            bg: const Color(0xFFFFDAD6),
-            textCol: const Color(0xFF93000a),
-            borderCol: const Color(0xFFBA1A1A),
+            bg: (isDark ? Color(0xFF4A1414) : Color(0xFFFFDAD6)),
+            textCol: (isDark ? Color(0xFFFFB4AB) : Color(0xFF93000a)),
+            borderCol: (isDark ? Color(0xFFFFB4AB) : Color(0xFFBA1A1A)),
             level: 1,
             cardId: cardId,
           ),
           _buildChunkyButton(
             label: 'Trung bình',
             icon: Icons.sentiment_neutral,
-            bg: const Color(0xFFFFE0A3),
-            textCol: const Color(0xFF574200),
-            borderCol: const Color(0xFF765B06),
+            bg: (isDark ? Color(0xFF574200) : Color(0xFFFFE0A3)),
+            textCol: (isDark ? Color(0xFFFFE0A3) : Color(0xFF574200)),
+            borderCol: (isDark ? Color(0xFFBCA046) : Color(0xFF765B06)),
             level: 2,
             cardId: cardId,
           ),
           _buildChunkyButton(
             label: 'Dễ',
             icon: Icons.sentiment_very_satisfied,
-            bg: const Color(0xFFCAE6FF),
-            textCol: const Color(0xFF001E30),
-            borderCol: const Color(0xFF1C648E),
+            bg: (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF)),
+            textCol: (isDark ? Colors.white : Color(0xFF001E30)),
+            borderCol: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
             level: 3,
             cardId: cardId,
           ),
@@ -540,15 +541,11 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
   }) {
     return ElevatedButton(
       onPressed: () {
-        if (level == 0) {
-          _controller.nextCard(_refreshUIOnStateChange);
-        } else {
-          _controller.updateMemoryLevel(
-            cardId,
-            level,
-            _refreshUIOnStateChange,
-          );
-        }
+        _controller.updateMemoryLevel(
+          cardId,
+          level,
+          _refreshUIOnStateChange,
+        );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: bg,
@@ -563,7 +560,7 @@ class _FlashcardLearnScreenState extends State<FlashcardLearnScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: textCol, size: 24),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(

@@ -15,9 +15,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF1A1C1E);
+    final textColor =
+        Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF1A1C1E);
     final cardColor = Theme.of(context).cardColor;
-    final borderColor = isDarkMode ? Colors.grey[800]! : const Color(0xFFE2E2E5);
+    final borderColor = isDarkMode
+        ? Colors.grey[800]!
+        : const Color(0xFFE2E2E5);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Text(
           'Hồ sơ cá nhân',
           style: GoogleFonts.quicksand(
+            color: const Color(0xFF1C648E),
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -42,7 +46,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: const Color(0xFF1C648E).withValues(alpha: 0.1),
+                    backgroundColor: const Color(
+                      0xFF1C648E,
+                    ).withValues(alpha: 0.1),
                     child: const Icon(
                       Icons.person,
                       size: 50,
@@ -66,21 +72,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Học viên chăm chỉ',
-              style: GoogleFonts.quicksand(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              'Người học ẩn danh',
+              style: GoogleFonts.quicksand(fontSize: 18),
             ),
-            Text(
-              'Người dùng miễn phí',
-              style: GoogleFonts.quicksand(
-                fontSize: 16,
-                color: const Color(0xFF71787F),
-              ),
-            ),
+
             const SizedBox(height: 40),
-            
+
             _buildSettingItem(
               Icons.dark_mode,
               'Giao diện tối',
@@ -111,18 +108,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
             ),
-            _buildSettingItem(Icons.cloud_download, 'Sao lưu dữ liệu', cardColor: cardColor, borderColor: borderColor, color: textColor),
-            _buildSettingItem(Icons.info, 'Về ứng dụng', cardColor: cardColor, borderColor: borderColor, color: textColor),
+            _buildSettingItem(
+              Icons.cloud_download,
+              'Sao lưu dữ liệu',
+              cardColor: cardColor,
+              borderColor: borderColor,
+              color: textColor,
+            ),
+            _buildSettingItem(
+              Icons.info,
+              'Về ứng dụng',
+              cardColor: cardColor,
+              borderColor: borderColor,
+              color: textColor,
+            ),
             const SizedBox(height: 20),
-            
-            _buildSettingItem(Icons.delete_forever, 'Xóa toàn bộ dữ liệu', color: Colors.red, cardColor: cardColor, borderColor: borderColor),
+
+            _buildSettingItem(
+              Icons.delete_forever,
+              'Xóa toàn bộ dữ liệu',
+              color: Colors.red,
+              cardColor: cardColor,
+              borderColor: borderColor,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, {Widget? trailing, required Color color, required Color cardColor, required Color borderColor}) {
+  Widget _buildSettingItem(
+    IconData icon,
+    String title, {
+    Widget? trailing,
+    required Color color,
+    required Color cardColor,
+    required Color borderColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -132,7 +154,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           side: BorderSide(color: borderColor, width: 1),
         ),
         child: ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -149,7 +173,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontSize: 16,
             ),
           ),
-          trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          trailing:
+              trailing ??
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           onTap: () {},
         ),
       ),

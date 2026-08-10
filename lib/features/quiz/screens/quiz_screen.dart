@@ -6,24 +6,21 @@ class QuizScreen extends StatefulWidget {
   final int documentId;
   final String folderName;
 
-  const QuizScreen({
-    super.key,
-    required this.documentId,
-    required this.folderName,
-  });
+  QuizScreen({super.key, required this.documentId, required this.folderName});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   late QuizController _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = QuizController(documentId: widget.documentId);
-    _controller.loadQuizData(() {
+    _controller.ShuffleQuizData(() {
       if (mounted) setState(() {});
     });
   }
@@ -37,17 +34,19 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     if (_controller.isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF9F9FC),
+      return Scaffold(
+        backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF1C648E)),
+          child: CircularProgressIndicator(
+            color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
+          ),
         ),
       );
     }
 
     if (_controller.quizQuestions.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
+        backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
         appBar: _buildSimpleAppBar(),
         body: Center(
           child: Text(
@@ -56,7 +55,7 @@ class _QuizScreenState extends State<QuizScreen> {
             style: GoogleFonts.quicksand(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF41484E),
+              color: (isDark ? Colors.grey[300]! : Color(0xFF41484E)),
             ),
           ),
         ),
@@ -68,7 +67,7 @@ class _QuizScreenState extends State<QuizScreen> {
         currentQuestion['question_content'] ?? 'Trống';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       appBar: _buildQuizHeader(),
       body: Stack(
         children: [
@@ -80,7 +79,7 @@ class _QuizScreenState extends State<QuizScreen> {
               width: 180,
               height: 180,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFDF96).withOpacity(0.15),
+                color: Color(0xFFFFDF96).withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
             ),
@@ -92,7 +91,7 @@ class _QuizScreenState extends State<QuizScreen> {
               width: 220,
               height: 220,
               decoration: BoxDecoration(
-                color: const Color(0xFF7CB9E8).withOpacity(0.12),
+                color: Color(0xFF7CB9E8).withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
             ),
@@ -104,14 +103,14 @@ class _QuizScreenState extends State<QuizScreen> {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.all(20.0),
+                      physics: BouncingScrollPhysics(),
+                      padding: EdgeInsets.all(20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // 1. Thẻ hiển thị câu hỏi
                           _buildQuestionCard(questionContent),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
 
                           // 2. Danh sách 4 đáp án lựa chọn Chunky
                           _buildChunkyOptionButton(
@@ -151,10 +150,10 @@ class _QuizScreenState extends State<QuizScreen> {
 
   PreferredSizeWidget _buildSimpleAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.close),
+        icon: Icon(Icons.close),
         onPressed: () => Navigator.pop(context),
       ),
     );
@@ -162,11 +161,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
   PreferredSizeWidget _buildQuizHeader() {
     return AppBar(
-      backgroundColor: const Color(0xFFF9F9FC),
+      backgroundColor: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)),
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.close, color: Color(0xFF1A1C1E)),
+        icon: Icon(
+          Icons.close,
+          color: (isDark ? Colors.white : Color(0xFF1A1C1E)),
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       centerTitle: true,
@@ -177,15 +179,15 @@ class _QuizScreenState extends State<QuizScreen> {
             style: GoogleFonts.quicksand(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF71787f),
+              color: (isDark ? Colors.grey[400]! : Color(0xFF71787f)),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Container(
             width: 120,
             height: 6,
             decoration: BoxDecoration(
-              color: const Color(0xFFEDEEF1),
+              color: (isDark ? Colors.grey[850]! : Color(0xFFEDEEF1)),
               borderRadius: BorderRadius.circular(99),
             ),
             child: Row(
@@ -194,14 +196,14 @@ class _QuizScreenState extends State<QuizScreen> {
                   flex: (_controller.progressPercent * 100).toInt(),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2C6956),
+                      color: (isDark ? Color(0xFFA5D6A7) : Color(0xFF2C6956)),
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
                 ),
                 Expanded(
                   flex: 100 - (_controller.progressPercent * 100).toInt(),
-                  child: const SizedBox.shrink(),
+                  child: SizedBox.shrink(),
                 ),
               ],
             ),
@@ -210,23 +212,27 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 16.0, top: 12.0, bottom: 12.0),
+          padding: EdgeInsets.only(right: 16.0, top: 12.0, bottom: 12.0),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFDAD6),
+              color: (isDark ? Color(0xFF4A1414) : Color(0xFFFFDAD6)),
               borderRadius: BorderRadius.circular(99),
             ),
             child: Row(
               children: [
-                const Icon(Icons.timer, size: 14, color: Color(0xFF93000A)),
-                const SizedBox(width: 4),
+                Icon(
+                  Icons.timer,
+                  size: 14,
+                  color: (isDark ? Color(0xFFFFB4AB) : Color(0xFF93000A)),
+                ),
+                SizedBox(width: 4),
                 Text(
                   _controller.formattedTime,
                   style: GoogleFonts.quicksand(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF93000A),
+                    color: (isDark ? Color(0xFFFFB4AB) : Color(0xFF93000A)),
                   ),
                 ),
               ],
@@ -240,16 +246,18 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildQuestionCard(String question) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: (isDark ? Colors.grey[850]! : Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFC0C7CF)),
+        border: Border.all(
+          color: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7CB9E8).withOpacity(0.15),
+            color: Color(0xFF7CB9E8).withOpacity(0.15),
             blurRadius: 24,
-            offset: const Offset(0, 8),
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -262,13 +270,13 @@ class _QuizScreenState extends State<QuizScreen> {
             child: Container(
               width: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFF7CB9E8),
+                color: Color(0xFF7CB9E8),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 16.0),
+            padding: EdgeInsets.only(left: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -277,35 +285,35 @@ class _QuizScreenState extends State<QuizScreen> {
                     Container(
                       width: 32,
                       height: 32,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFCAE6FF),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF)),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.history_edu,
                         size: 18,
-                        color: Color(0xFF1C648E),
+                        color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       widget.folderName.toUpperCase(),
                       style: GoogleFonts.quicksand(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1C648E),
+                        color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
                         letterSpacing: 1.1,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 Text(
                   question,
                   style: GoogleFonts.quicksand(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1C1E),
+                    color: (isDark ? Colors.white : Color(0xFF1A1C1E)),
                     height: 1.4,
                   ),
                 ),
@@ -321,27 +329,28 @@ class _QuizScreenState extends State<QuizScreen> {
     final bool isSelected = _controller.selectedOption == optionKey;
     final bool hasSelectedAny = _controller.selectedOption.isNotEmpty;
 
-    Color bg = Colors.white;
-    Color borderCol = const Color(0xFFC0C7CF);
-    Color textCol = const Color(0xFF1A1C1E);
+    Color bg = (isDark ? Colors.grey[850]! : Colors.white);
+    Color borderCol = (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF));
+    Color textCol = (isDark ? Colors.white : Color(0xFF1A1C1E));
 
     if (isSelected) {
-      bg = const Color(0xFFCAE6FF);
-      borderCol = const Color(0xFF1C648E);
-      textCol = const Color(0xFF004B70);
+      bg = (isDark ? Color(0xFF1E3A5F) : Color(0xFFCAE6FF));
+      borderCol = (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E));
+      textCol = (isDark ? Colors.blue[100]! : Color(0xFF004B70));
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14.0),
+      padding: EdgeInsets.only(bottom: 14.0),
       child: ElevatedButton(
-        onPressed: () => _controller.selectOption(optionKey, () => setState(() {})),
+        onPressed: () =>
+            _controller.selectOption(optionKey, () => setState(() {})),
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: textCol,
           disabledBackgroundColor: bg,
           disabledForegroundColor: textCol,
           elevation: 0,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: borderCol, width: 2),
@@ -354,7 +363,7 @@ class _QuizScreenState extends State<QuizScreen> {
               height: 36,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF1C648E)
+                    ? (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))
                     : Colors.transparent,
                 border: Border.all(color: borderCol, width: 2),
                 shape: BoxShape.circle,
@@ -364,12 +373,14 @@ class _QuizScreenState extends State<QuizScreen> {
                   optionKey,
                   style: GoogleFonts.quicksand(
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : const Color(0xFF71787f),
+                    color: isSelected
+                        ? (isDark ? Colors.grey[850]! : Colors.white)
+                        : (isDark ? Colors.grey[400]! : Color(0xFF71787f)),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             Expanded(
               child: Text(
                 optionText,
@@ -381,7 +392,10 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle, color: Color(0xFF1C648E)),
+              Icon(
+                Icons.check_circle,
+                color: (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E)),
+              ),
           ],
         ),
       ),
@@ -392,7 +406,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final bool hasSelected = _controller.selectedOption.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0, left: 20.0, right: 20.0),
+      padding: EdgeInsets.only(bottom: 24.0, left: 20.0, right: 20.0),
       child: Column(
         children: [
           SizedBox(
@@ -404,18 +418,22 @@ class _QuizScreenState extends State<QuizScreen> {
                   : () => _controller.nextQuestion(() => setState(() {})),
               style: ElevatedButton.styleFrom(
                 backgroundColor: hasSelected
-                    ? const Color(0xFF1C648E)
-                    : const Color(0xFFC0C7CF),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFFC0C7CF),
-                disabledForegroundColor: Colors.white,
+                    ? (isDark ? Color(0xFF90CAF9) : Color(0xFF1C648E))
+                    : (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)),
+                foregroundColor: (isDark ? Colors.grey[850]! : Colors.white),
+                disabledBackgroundColor: (isDark
+                    ? Colors.grey[700]!
+                    : Color(0xFFC0C7CF)),
+                disabledForegroundColor: (isDark
+                    ? Colors.grey[850]!
+                    : Colors.white),
                 elevation: hasSelected ? 4 : 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(99),
                   side: BorderSide(
                     color: hasSelected
-                        ? const Color(0xFF004B70)
-                        : const Color(0xFF71787f),
+                        ? (isDark ? Colors.blue[100]! : Color(0xFF004B70))
+                        : (isDark ? Colors.grey[400]! : Color(0xFF71787f)),
                     width: 2,
                   ),
                 ),
@@ -430,18 +448,18 @@ class _QuizScreenState extends State<QuizScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.arrow_forward, size: 18),
+                  SizedBox(width: 6),
+                  Icon(Icons.arrow_forward, size: 18),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             'Chọn một đáp án để kích hoạt nút tiếp tục',
             style: GoogleFonts.quicksand(
               fontSize: 12,
-              color: const Color(0xFFC0C7CF),
+              color: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -454,21 +472,25 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildResultsOverlay() {
     return Positioned.fill(
       child: Container(
-        color: const Color(0xFFF9F9FC).withOpacity(0.85),
-        padding: const EdgeInsets.all(20),
+        color: (isDark ? Color(0xFF121212) : Color(0xFFF9F9FC)).withOpacity(
+          0.85,
+        ),
+        padding: EdgeInsets.all(20),
         child: Center(
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 360),
+            constraints: BoxConstraints(maxWidth: 360),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: (isDark ? Colors.grey[850]! : Colors.white),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFC0C7CF)),
+              border: Border.all(
+                color: (isDark ? Colors.grey[700]! : Color(0xFFC0C7CF)),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 32,
-                  offset: const Offset(0, 12),
+                  offset: Offset(0, 12),
                 ),
               ],
             ),
@@ -478,37 +500,43 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Khối thông báo Chúc mừng trên đỉnh
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  color: const Color(0xFFAEEDD5).withOpacity(0.5),
+                  padding: EdgeInsets.all(24),
+                  color: Color(0xFFAEEDD5).withOpacity(0.5),
                   child: Column(
                     children: [
                       Container(
                         width: 64,
                         height: 64,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2C6956),
+                        decoration: BoxDecoration(
+                          color: (isDark
+                              ? Color(0xFFA5D6A7)
+                              : Color(0xFF2C6956)),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.celebration,
-                          color: Colors.white,
+                          color: (isDark ? Colors.grey[850]! : Colors.white),
                           size: 36,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         'Hoàn thành!',
                         style: GoogleFonts.quicksand(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF002118),
+                          color: (isDark
+                              ? Color(0xFFC8E6C9)
+                              : Color(0xFF002118)),
                         ),
                       ),
                       Text(
                         'Bạn đã làm rất tốt hôm nay.',
                         style: GoogleFonts.quicksand(
                           fontSize: 13,
-                          color: const Color(0xFF0D503F),
+                          color: (isDark
+                              ? Color(0xFF81C784)
+                              : Color(0xFF0D503F)),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -518,7 +546,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
                 // Khối thống kê điểm số thật
                 Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -533,7 +561,9 @@ class _QuizScreenState extends State<QuizScreen> {
                                 style: GoogleFonts.quicksand(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF71787f),
+                                  color: (isDark
+                                      ? Colors.grey[400]!
+                                      : Color(0xFF71787f)),
                                 ),
                               ),
                               Text(
@@ -541,7 +571,9 @@ class _QuizScreenState extends State<QuizScreen> {
                                 style: GoogleFonts.quicksand(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1C648E),
+                                  color: (isDark
+                                      ? Color(0xFF90CAF9)
+                                      : Color(0xFF1C648E)),
                                 ),
                               ),
                             ],
@@ -551,18 +583,22 @@ class _QuizScreenState extends State<QuizScreen> {
                             style: GoogleFonts.quicksand(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF2C6956),
+                              color: (isDark
+                                  ? Color(0xFFA5D6A7)
+                                  : Color(0xFF2C6956)),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       // Progress bar kết quả bài làm
                       Container(
                         height: 10,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEDEEF1),
+                          color: (isDark
+                              ? Colors.grey[850]!
+                              : Color(0xFFEDEEF1)),
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: Row(
@@ -571,19 +607,21 @@ class _QuizScreenState extends State<QuizScreen> {
                               flex: _controller.scorePercentage,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2C6956),
+                                  color: (isDark
+                                      ? Color(0xFFA5D6A7)
+                                      : Color(0xFF2C6956)),
                                   borderRadius: BorderRadius.circular(99),
                                 ),
                               ),
                             ),
                             Expanded(
                               flex: 100 - _controller.scorePercentage,
-                              child: const SizedBox.shrink(),
+                              child: SizedBox.shrink(),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Hiển thị danh sách các câu làm sai cần coi lại
                       Text(
@@ -591,10 +629,12 @@ class _QuizScreenState extends State<QuizScreen> {
                         style: GoogleFonts.quicksand(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFFBA1A1A),
+                          color: (isDark
+                              ? Color(0xFFFFB4AB)
+                              : Color(0xFFBA1A1A)),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Container(
                         height: 120,
                         child: ListView.builder(
@@ -603,14 +643,16 @@ class _QuizScreenState extends State<QuizScreen> {
                           itemBuilder: (context, index) {
                             final item = _controller.wrongQuestionsList[index];
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 6.0),
+                              padding: EdgeInsets.only(bottom: 6.0),
                               child: Text(
                                 '• Câu #${item['index']}: ${item['content']}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.quicksand(
                                   fontSize: 12,
-                                  color: const Color(0xFF41484E),
+                                  color: (isDark
+                                      ? Colors.grey[300]!
+                                      : Color(0xFF41484E)),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -619,7 +661,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       // Nút thoát quay về trang chủ
                       SizedBox(
                         width: double.infinity,
@@ -627,7 +669,9 @@ class _QuizScreenState extends State<QuizScreen> {
                         child: FilledButton(
                           onPressed: () => Navigator.pop(context),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF1C648E),
+                            backgroundColor: (isDark
+                                ? Color(0xFF90CAF9)
+                                : Color(0xFF1C648E)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(99),
                             ),

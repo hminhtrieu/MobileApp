@@ -47,6 +47,15 @@ class _AddThemeScreenState extends State<AddThemeScreen> {
     if (mounted) {
       Navigator.pop(context); // Đóng Loading Dialog
       if (isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Xử lý dữ liệu AI và tạo chủ đề thành công!',
+              style: GoogleFonts.quicksand(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFF2C6956),
+          ),
+        );
         Navigator.pop(context, true); // Trả kết quả thành công về trang cha
       }
     }

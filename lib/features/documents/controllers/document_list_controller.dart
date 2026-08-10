@@ -68,14 +68,13 @@ class DocumentListController extends ChangeNotifier {
         acceptedTypeGroups: <XTypeGroup>[typeGroup],
       );
 
-      if (file == null) return; // Hủy chọn file
+      if (file == null) return;
 
       final int length = await file.length();
       if (length > 3 * 1024 * 1024) {
         throw 'Kích thước tệp vượt quá 3MB. Vui lòng chọn tệp nhỏ hơn để hệ thống AI xử lý.';
       }
 
-      // Throw a specific custom exception so UI can catch it and show loading
       throw 'START_UPLOAD:${file.path}|${file.name}';
     } catch (e) {
       rethrow;
@@ -88,10 +87,13 @@ class DocumentListController extends ChangeNotifier {
     String fileName,
   ) async {
     try {
-      final url = 'http://192.168.1.2:5678/webhook-test/upload-document';
+      final url = 'https://trieu-myn8n.me/webhook/upload-document';
       final dio = Dio();
       dio.options.connectTimeout = const Duration(seconds: 300);
       dio.options.receiveTimeout = const Duration(seconds: 300);
+      dio.options.headers = {
+        'Authorization': 'Bearer my_secure_webhook_token_2026',
+      };
 
       FormData formData = FormData.fromMap({
         'document_id': doc.documentId.toString(),
@@ -129,7 +131,7 @@ class DocumentListController extends ChangeNotifier {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout) {
-          throw 'Máy chủ AI đang xử lý quá lâu hoặc quá tải (Timeout). Vui lòng thử lại.';
+          throw 'Máy chủ đang xử lý quá lâu hoặc quá tải (Timeout). Vui lòng thử lại.';
         } else if (e.type == DioExceptionType.connectionError) {
           throw 'Không thể kết nối đến máy chủ n8n. Vui lòng kiểm tra lại server hoặc mạng internet.';
         } else if (e.response != null) {

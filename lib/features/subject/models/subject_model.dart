@@ -60,7 +60,7 @@ class SubjectModel {
       // Delete flashcards, quizzes, and quiz results for each document
       await db.delete('Flashcard', where: 'document_id = ?', whereArgs: [docId]);
       await db.delete('Quiz', where: 'document_id = ?', whereArgs: [docId]);
-      await db.delete('Quiz_Result', where: 'document_id = ?', whereArgs: [docId]);
+      await db.delete('Result', where: 'document_id = ?', whereArgs: [docId]);
     }
 
     // Delete all documents for this subject
